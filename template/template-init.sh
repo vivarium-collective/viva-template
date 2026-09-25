@@ -134,16 +134,71 @@ def register_workspace_processes(core):
     return core
 
 
+def _chain_installed_module_cores(core):
+    """Chain each catalog-installed module's own core registration into ``core``.
+
+    A module added via the Catalog tab (e.g. viva-munk, spatio-flux) registers
+    its custom TYPES (``set_float``, ``pymunk_agent`` …) and composite generators
+    in its own ``<pkg>.core.build_core`` / ``<pkg>.register_types``. The dashboard
+    builds composites against THIS ``build_core``, so unless we call the installed
+    modules' registration here, their composites fail to realize with e.g.
+    ``unable to parse type "map[set_float]"``. Reading ``workspace.yaml`` imports
+    means we don't have to hardcode a linked-package list — a newly installed
+    module is chained automatically. Best-effort: a module with no core, or one
+    that fails to import, is skipped.
+    """
+    try:
+        import yaml
+    except Exception:
+        return core
+    from pathlib import Path
+    here = Path(__file__).resolve()
+    for ws_file in (here.parent.parent / "workspace.yaml",
+                    Path(__import__("os").environ.get("WORKSPACE_DIR", "") or ".") / "workspace.yaml",
+                    Path.cwd() / "workspace.yaml"):
+        if ws_file.is_file():
+            break
+    else:
+        return core
+    try:
+        imports = (yaml.safe_load(ws_file.read_text(encoding="utf-8")) or {}).get("imports") or {}
+    except Exception:
+        return core
+    if not isinstance(imports, dict):
+        return core
+    for name, spec in imports.items():
+        spec = spec if isinstance(spec, dict) else {}
+        pkg = (spec.get("package") or str(name)).replace("-", "_")
+        # Prefer ``<pkg>.core.build_core(core)``; fall back to ``<pkg>.build_core``
+        # / ``<pkg>.register_types``. Each is a ``(core) -> core | None`` call.
+        for modname, fn_name in ((pkg + ".core", "build_core"),
+                                 (pkg, "build_core"),
+                                 (pkg, "register_types")):
+            try:
+                fn = getattr(importlib.import_module(modname), fn_name, None)
+                if callable(fn):
+                    core = fn(core) or core
+                    break
+            except Exception:
+                continue
+    return core
+
+
 def build_core(core=None):
     """Return a process-bigraph core with this workspace's processes registered.
 
     This is the canonical core for the workspace: composites that address
     ``local:<ProcessName>`` (and the test suite) must build their ``Composite``
     against a core returned from here, not a bare ``allocate_core()``.
+
+    Catalog-installed modules declared in ``workspace.yaml`` imports are chained
+    in too (:func:`_chain_installed_module_cores`), so their custom types and
+    composites are available without hardcoding a linked-package list.
     """
     if core is None:
         core = allocate_core()
     register_workspace_processes(core)
+    _chain_installed_module_cores(core)
     return core
 EOF
   echo "created $PACKAGE_PATH/{__init__.py,core.py}"
