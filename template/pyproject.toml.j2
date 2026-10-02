@@ -4,7 +4,11 @@ version = "0.0.0"
 description = "Process-bigraph research workspace"
 requires-python = ">=3.11"
 dependencies = [
-    "process-bigraph",
+    # Floor: 1.8.5 ships the composite `core_extensions` mechanism (1.8.0) the
+    # dashboard relies on AND the emitter fix (#217) + `requests`/`fire` server
+    # deps. Below this, composite type-registration and agent-embedded emits
+    # break — the root cause behind the map[...] type errors seen in the field.
+    "process-bigraph>=1.8.5",
     "bigraph-schema",
     "bigraph-viz>=2.0.3",
     "pyyaml>=6.0",
