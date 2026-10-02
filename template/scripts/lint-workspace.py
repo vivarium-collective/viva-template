@@ -487,8 +487,22 @@ def main() -> None:
         from process_bigraph.composite_generator import (
             _REGISTRY as _CG, build_generator as _bg)
         for _gid, _entry in list(_CG.items()):
-            if not _gid.startswith(_cpkg + ".") or getattr(_entry, "parameters", None):
-                continue  # foreign, or a parameterized family (the correct pattern)
+            if not _gid.startswith(_cpkg + "."):
+                continue  # foreign generator
+            # core_extensions hygiene: a generator that registers custom types or
+            # processes must declare them via core_extensions=[...], or the
+            # Composites drill-in — which realizes the generator in a BARE core —
+            # fails with "cannot resolve type map[...]". We can't tell from here
+            # whether a given generator *needs* extensions, so this is a WARN.
+            if not (getattr(_entry, "core_extensions", None) or []):
+                composite_warnings.append(
+                    f"  WARN composite {_gid}: declares no core_extensions — if it "
+                    f"registers custom types/processes, the Composites drill-in "
+                    f"(bare core) fails with 'cannot resolve type map[...]'. Add "
+                    f"core_extensions=[register_types, register_processes] to the "
+                    f"@composite_generator.")
+            if getattr(_entry, "parameters", None):
+                continue  # a parameterized family — skip the single-process check
             try:
                 _doc = _bg(_entry)
             except Exception:
