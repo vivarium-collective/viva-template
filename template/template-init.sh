@@ -224,6 +224,17 @@ if [ -f pyproject.toml ] \
   echo "pinned vivarium-workbench to git source: $VIVARIUM_GIT_URL@$VIVARIUM_GIT_REF"
 fi
 
+# Lock the dependencies so the bootstrap commit includes uv.lock: every checkout, CI run and remote run
+# then installs the same versions (workspace CI checks it with `uv lock --check`).
+# (uv is required at the top of this script.)
+if [ -f pyproject.toml ]; then
+  if uv lock; then
+    echo "locked dependencies: uv.lock (commit it with the workspace)"
+  else
+    echo "WARNING: 'uv lock' failed — fix the dependency error above, run 'uv lock', and commit uv.lock" >&2
+  fi
+fi
+
 # Remove the init script itself once we're done
 echo "removing template-init.sh"
 rm -f template-init.sh
@@ -235,7 +246,7 @@ echo "📋 Next steps are in: NEXT_STEPS.md"
 echo
 echo "Quick setup:"
 echo "  1. git init -b main && git add -A && git commit -m 'feat: workspace bootstrap'"
-echo "  2. uv venv .venv && source .venv/bin/activate && uv pip install -e \".[dev]\""
+echo "  2. uv sync --extra dev && source .venv/bin/activate   # installs the locked versions"
 echo "  3. python scripts/lint-workspace.py    # should print 'workspace lint: OK'"
 echo "  4. bash scripts/serve.sh               # open the dashboard"
 echo
