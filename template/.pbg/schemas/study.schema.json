@@ -51,7 +51,7 @@
     },
     "gate_status": {
       "type": ["string", "null"],
-      "enum": ["blocked", "needs_calibration", "passed", "failed", "stale", null],
+      "enum": ["not_started", "blocked", "needs_calibration", "passed", "failed", "stale", null],
       "description": "Multi-axis status (Pass A). The pipeline-gate verdict — drives downstream unblocking. When set, the dashboard renders this as the headline status pill. Independent of all other axes. Optional."
     },
     "expert_review_status": {
@@ -474,7 +474,7 @@
                   },
                   "required_gate_status": {
                     "type": ["string", "null"],
-                    "enum": ["blocked", "needs_calibration", "passed", "failed", "stale", null],
+                    "enum": ["not_started", "blocked", "needs_calibration", "passed", "failed", "stale", null],
                     "description": "Pass A extension. The minimum gate_status the parent must reach for this dependency to count. Independent of `condition` — both can be specified; the dashboard ANDs them."
                   },
                   "outputs_used": {
@@ -521,8 +521,8 @@
             },
             "result": {
               "type": ["string", "null"],
-              "enum": ["blocked", "needs_calibration", "passed", "failed", "stale", null],
-              "description": "Last-computed verdict. Mirrors the gate_status enum so the dashboard can lift it directly. Null when the evaluator has not been run yet."
+              "enum": ["not_started", "blocked", "needs_calibration", "passed", "failed", "stale", null],
+              "description": "Last-computed verdict. Mirrors the gate_status enum so the dashboard can lift it directly. `not_started` when the evaluator ran but the study has no coded behavior_tests to evaluate; null when the evaluator has not been run yet."
             },
             "blocked_by": {
               "type": "array",
