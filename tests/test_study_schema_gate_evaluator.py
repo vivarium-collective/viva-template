@@ -94,7 +94,7 @@ def test_evaluator_with_extra_fields_validates(validator):
 
 @pytest.mark.parametrize(
     "good",
-    ["blocked", "needs_calibration", "passed", "failed", "stale"],
+    ["not_started", "blocked", "needs_calibration", "passed", "failed", "stale"],
 )
 def test_result_accepts_gate_status_enum(validator, good):
     """gate_evaluator.result mirrors the top-level gate_status enum."""
@@ -105,6 +105,24 @@ def test_result_accepts_gate_status_enum(validator, good):
 def test_result_accepts_null(validator):
     """Null = not yet evaluated."""
     spec = _study({"result": None})
+    assert list(validator.iter_errors(spec)) == []
+
+
+def test_result_accepts_not_started(validator):
+    """Regression for vivarium-workbench#1276.
+
+    The run path persists ``pipeline_gate.gate_evaluator.result: not_started``
+    whenever a study runs but has no coded behavior_tests to evaluate — the
+    value is written by viva_superpowers.study_verdict.write_gate_evaluator
+    (``_RESULT_NOT_STARTED``), invoked from the workbench's study-run flow.
+    The enum previously omitted it, so the writer produced study.yaml docs
+    this schema rejected.
+    """
+    spec = _study({
+        "expr": "tests['dnaA-count'].result == 'PASS'",
+        "result": "not_started",
+        "blocked_by": ["dnaA-count"],
+    })
     assert list(validator.iter_errors(spec)) == []
 
 
@@ -131,6 +149,31 @@ def test_blocked_by_empty_array_valid(validator):
 
 
 # Co-existence with the rest of pipeline_gate -------------------------------
+
+
+def test_top_level_gate_status_accepts_not_started(validator):
+    """The gate_evaluator.result enum mirrors top-level gate_status, so the
+    two must stay in sync (wb#1276)."""
+    spec = {
+        "name": "test-study",
+        "baseline": [{"name": "b1", "composite": "pkg.composites.x"}],
+        "gate_status": "not_started",
+    }
+    assert list(validator.iter_errors(spec)) == []
+
+
+def test_required_gate_status_accepts_not_started(validator):
+    """A prerequisite's required_gate_status shares the same enum (wb#1276)."""
+    spec = {
+        "name": "test-study",
+        "baseline": [{"name": "b1", "composite": "pkg.composites.x"}],
+        "pipeline_gate": {
+            "prerequisites": [
+                {"study": "parent-study", "required_gate_status": "not_started"},
+            ],
+        },
+    }
+    assert list(validator.iter_errors(spec)) == []
 
 
 def test_evaluator_coexists_with_prerequisites_and_enables(validator):
