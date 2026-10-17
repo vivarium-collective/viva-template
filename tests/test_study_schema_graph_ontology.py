@@ -97,6 +97,24 @@ def test_verdict_rejects_legacy_or_invalid(validator, value):
 
 
 # ---------------------------------------------------------------------------
+# evidence_tier
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.parametrize(
+    "value", ["conceptual_demonstration", "mechanistic_prediction", "calibrated", None]
+)
+def test_evidence_tier_accepts_canonical_values(validator, value):
+    validator.validate(_minimal_study(evidence_tier=value))
+
+
+@pytest.mark.parametrize("value", ["mechanistic", "demonstration", "strong", "bogus"])
+def test_evidence_tier_rejects_invalid(validator, value):
+    with pytest.raises(jsonschema.ValidationError):
+        validator.validate(_minimal_study(evidence_tier=value))
+
+
+# ---------------------------------------------------------------------------
 # relation on parent_studies[] and pipeline_gate.prerequisites[]
 # ---------------------------------------------------------------------------
 
