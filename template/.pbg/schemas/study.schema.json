@@ -1137,8 +1137,8 @@
           },
           "status": {
             "type": "string",
-            "enum": ["confirms", "partial", "contradicts", "novel"],
-            "description": "Pass 10A. How the finding relates to its expected reference. confirms = model matches expectation. partial = model matches some aspects. contradicts = model diverges from expectation. novel = no prior expectation; finding surfaces something new."
+            "enum": ["planned", "confirms", "partial", "contradicts", "novel"],
+            "description": "Pass 10A. How the finding relates to its expected reference. planned = a design-phase target finding stated before the study runs (no result yet); replaced by one of the realized values once evidence exists. confirms = model matches expectation. partial = model matches some aspects. contradicts = model diverges from expectation. novel = no prior expectation; finding surfaces something new."
           },
           "statement": {
             "type": "string",
