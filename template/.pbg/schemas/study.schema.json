@@ -59,6 +59,16 @@
       "enum": ["not_requested", "requested", "reviewed", "approved", "disputed", null],
       "description": "Multi-axis status (Pass A). Whether a domain expert has signed off on the study's framing/conclusions. Independent of all other axes. Optional."
     },
+    "execution_status": {
+      "type": ["string", "null"],
+      "enum": ["proposed", "planned", "running", "completed", "failed", null],
+      "description": "Two-axis ontology — the EXECUTION axis (what happened), orthogonal to the scientific `verdict`. proposed = identified, not yet planned; planned = defined, awaiting execution; running = execution in progress; completed = finished, results available; failed = could not complete for technical/operational reasons. A negative scientific result is NOT a failed execution — it is `completed` with a `verdict` of refuted/inconclusive. Optional; when absent the dashboard derives it from the legacy status / simulation_status / gate_status fields. Supersedes using `confidence` (Accepted/Investigating/Planned) as a status."
+    },
+    "verdict": {
+      "type": ["string", "null"],
+      "enum": ["supported", "qualified", "inconclusive", "refuted", null],
+      "description": "Two-axis ontology — the SCIENTIFIC VERDICT axis (what the evidence supports), meaningful once execution_status is `completed`. supported = results support the primary hypothesis/prediction; qualified = supported only under specified conditions or assumptions; inconclusive = evidence is insufficient, mixed, or unresolved; refuted = results contradict the tested hypothesis/prediction (an honest negative is a refuted verdict, not an execution failure). A verdict applies to the specific hypothesis being assessed, not the general value of the study. Optional; when absent the dashboard derives it from report.verdict / findings."
+    },
     "phase": {
       "type": "string",
       "enum": ["Design", "Build", "Simulate", "Evaluate", "Decide"],
@@ -331,11 +341,42 @@
                 "enum": ["tests-passed", "ran", "complete"],
                 "default": "tests-passed",
                 "description": "When the parent satisfies this condition, this study is unblocked. tests-passed = parent.tests.last_results.passed > 0 AND failed == 0. ran = parent.status in {ran, complete}. complete = parent.status == complete."
+              },
+              "relation": {
+                "type": ["string", "null"],
+                "enum": ["builds-on", "tests", "motivates", "alternative-to", null],
+                "default": "builds-on",
+                "description": "Investigation-graph edge TYPE from the parent to this study. builds-on = this study inherits a model/method/finding from the parent; tests = this study evaluates a claim from the parent; motivates = the parent raised the question this study investigates; alternative-to = the two studies are competing approaches (rendered undirected). Optional; defaults to builds-on. Legacy values (leads-to, model-input, refutes, precedes, evidence, calibrates-threshold) are accepted by the dashboard via an alias map but should be migrated to the four canonical types."
               }
             },
             "additionalProperties": false
           }
         ]
+      }
+    },
+    "parent_relations": {
+      "type": "array",
+      "description": "Investigation-graph edge TYPING, parallel to parent_studies / pipeline_gate.prerequisites. Each item types the relationship from an earlier study to this one for the graph; edge EXISTENCE still comes from prerequisites / interface inputs. Use when the typed relation (builds-on/tests/motivates/alternative-to) differs from the plain dependency, or to type edges that are not gating prerequisites.",
+      "items": {
+        "type": "object",
+        "required": ["study", "relation"],
+        "additionalProperties": false,
+        "properties": {
+          "study": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9_-]*$",
+            "description": "Slug of the earlier (parent) study the edge points from."
+          },
+          "relation": {
+            "type": "string",
+            "enum": ["builds-on", "tests", "motivates", "alternative-to"],
+            "description": "Edge type from the parent to this study. builds-on = inherits a model/method/finding; tests = evaluates a claim from the parent; motivates = the parent raised the question this study investigates; alternative-to = competing approaches (rendered undirected). Legacy values (leads-to, model-input, refutes, precedes) are alias-mapped by the dashboard but should be migrated here."
+          },
+          "rationale": {
+            "type": "string",
+            "description": "Optional one-line reason for the edge (e.g. 'uses carbon-fixation fluxes as inputs to the metabolic network'). Shown on edge hover."
+          }
+        }
       }
     },
     "expected_behavior": {
@@ -471,6 +512,12 @@
                     "enum": ["tests-passed", "ran", "complete"],
                     "default": "tests-passed",
                     "description": "When the parent satisfies this condition, this study is unblocked. Same semantics as parent_studies[].condition."
+                  },
+                  "relation": {
+                    "type": ["string", "null"],
+                    "enum": ["builds-on", "tests", "motivates", "alternative-to", null],
+                    "default": "builds-on",
+                    "description": "Investigation-graph edge TYPE from the parent to this study. Same vocabulary as parent_studies[].relation: builds-on | tests | motivates | alternative-to. Optional; defaults to builds-on. Legacy values are alias-mapped by the dashboard but should be migrated."
                   },
                   "required_gate_status": {
                     "type": ["string", "null"],
