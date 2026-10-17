@@ -69,6 +69,11 @@
       "enum": ["supported", "qualified", "inconclusive", "refuted", null],
       "description": "Two-axis ontology — the SCIENTIFIC VERDICT axis (what the evidence supports), meaningful once execution_status is `completed`. supported = results support the primary hypothesis/prediction; qualified = supported only under specified conditions or assumptions; inconclusive = evidence is insufficient, mixed, or unresolved; refuted = results contradict the tested hypothesis/prediction (an honest negative is a refuted verdict, not an execution failure). A verdict applies to the specific hypothesis being assessed, not the general value of the study. Optional; when absent the dashboard derives it from report.verdict / findings."
     },
+    "evidence_tier": {
+      "type": ["string", "null"],
+      "enum": ["conceptual_demonstration", "mechanistic_prediction", "calibrated", null],
+      "description": "Two-axis ontology — evidence strength shown as the graph node's Evidence pips: conceptual_demonstration (proof-of-concept) / mechanistic_prediction / calibrated (against data). Orthogonal to execution_status and verdict. Optional."
+    },
     "phase": {
       "type": "string",
       "enum": ["Design", "Build", "Simulate", "Evaluate", "Decide"],
