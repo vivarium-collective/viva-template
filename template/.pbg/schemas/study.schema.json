@@ -92,6 +92,8 @@
       "description": "One-paragraph statement of what happened and what it establishes \u2014 the RESULT in the study Overview, supported by `findings`. Supersedes the prose `conclusion` blob for the Overview."
     },
     "objective": {
+      "deprecated": true,
+      "x-replaced-by": "experiment",
       "type": "string",
       "description": "DEPRECATED for new studies \u2014 use `experiment` (the study Overview's Test). One-paragraph statement of what this study measures or demonstrates."
     },
@@ -100,6 +102,8 @@
       "description": "Extended background / context. Multi-line YAML strings are fine."
     },
     "hypothesis": {
+      "deprecated": true,
+      "x-replaced-by": "claim",
       "type": "string",
       "description": "DEPRECATED for new studies \u2014 the Overview is Claim/Test/Result. Testable prediction; optional for exploratory studies."
     },
@@ -170,8 +174,10 @@
       }
     },
     "observables": {
+      "deprecated": true,
+      "x-replaced-by": "readouts",
       "type": "array",
-      "description": "Store-path bindings to observe during runs.",
+      "description": "DEPRECATED (v3) — superseded by `readouts`. Store-path bindings to observe during runs.",
       "items": {
         "type": "object",
         "required": ["name", "store_path"],
@@ -199,6 +205,8 @@
       }
     },
     "runs": {
+      "deprecated": true,
+      "x-replaced-by": "runs.db",
       "type": "array",
       "description": "DEPRECATED in v4. Use runs.db (per-study SQLite) as the source of truth — runs_meta + history. F2 made the DB canonical; this field remains only for v3 back-compat and is no longer written by /viva-study run-baseline. Will be removed in a future schema bump.",
       "items": {
@@ -385,7 +393,9 @@
       }
     },
     "expected_behavior": {
-      "description": "List of testable behavioral expectations. Accepts two shapes: (1) legacy free-form strings for exploratory studies, or (2) structured DSL dicts with (name, en, given, measure, expect) for automated assertion via vivarium_workbench.lib.expected_behavior.evaluate().",
+      "deprecated": true,
+      "x-replaced-by": "behavior_tests",
+      "description": "DEPRECATED (v3) — superseded by `behavior_tests`. List of testable behavioral expectations. Accepts two shapes: (1) legacy free-form strings for exploratory studies, or (2) structured DSL dicts with (name, en, given, measure, expect) for automated assertion via vivarium_workbench.lib.expected_behavior.evaluate().",
       "oneOf": [
         {
           "type": "array",
