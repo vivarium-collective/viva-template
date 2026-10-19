@@ -41,7 +41,7 @@
       "deprecated": true,
       "x-replaced-by": "execution_status",
       "type": ["string", "null"],
-      "enum": ["not_started", "partial", "complete", "prototype", "not_run", "smoke_run", "in-progress", "in_progress", "planned", null],
+      "enum": ["not_started", "partial", "complete", "prototype", "not_run", "smoke_run", "in-progress", "planned", null],
       "description": "Multi-axis status (Pass A). Whether the code that backs the study (composites, processes, listeners) has been written. Independent of all other axes. Optional."
     },
     "simulation_status": {
@@ -225,7 +225,7 @@
           "id": {"type": "string"},
           "status": {
             "type": "string",
-            "enum": ["pending", "running", "completed", "failed", "complete", "done"]
+            "enum": ["pending", "running", "completed", "failed"]
           },
           "started_at": {"type": "string"},
           "completed_at": {"type": "string"},
@@ -728,7 +728,8 @@
           "steps": {"type": "array", "items": {"type": "string"}},
           "defer_until": {"type": "string"},
           "unblocks": {"type": "array", "items": {"type": "string"}}
-        }
+        },
+        "required": ["title"]
       }
     },
     "bibliography": {
@@ -860,7 +861,6 @@
                   "contradicts",
                   "novel",
                   "blocked",
-                  "confirmed",
                   "informational",
                   "open",
                   "refutes"
@@ -1069,8 +1069,9 @@
           "description": "Free-form headline verdict. Common values: passing | passing-with-caveats | failing-bio | failing-impl | inconclusive | not-yet-run."
         },
         "confidence": {
-          "type": "string",
-          "description": "Free-text confidence statement (prose, e.g. 'Moderate (resolved n=24)')."
+          "type": ["string", "null"],
+          "enum": ["high", "medium", "low", "design-stage", null],
+          "description": "Controlled confidence level: high | medium | low | design-stage."
         },
         "evidence_quality": {
           "type": "string",
@@ -1150,8 +1151,7 @@
             },
             "required": ["cite"]
           }
-        },
-        {"type": "object", "additionalProperties": true}
+        }
       ]
     },
     "design_pivot_required": {

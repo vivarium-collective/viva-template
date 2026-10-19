@@ -47,8 +47,7 @@ def test_other_canonical_arrays():
                     ("literature_anchors", {"cite": "c"}), ("implementation_requirements", {"title": "t"}),
                     ("simulation_set", {"name": "n"})]:
         assert errs({**BASE, k: [item]}) == [], k
-        if k != "implementation_requirements":  # title no longer required (Task 11)
-            assert errs({**BASE, k: [{"zzz": 1}]}) != [], k
+        assert errs({**BASE, k: [{"zzz": 1}]}) != [], k
     assert errs({**BASE, "limitations": ["a"]}) == []
     assert errs({**BASE, "expected_behavior": ["free string"]}) != []
 
@@ -56,7 +55,9 @@ def test_other_canonical_arrays():
 def test_corpus_widened_values_validate():
     f = {"id": "f", "kind": "mechanistic", "status": "refutes", "statement": "s"}
     assert errs({**BASE, "findings": [f]}) == []
-    assert errs({**BASE, "report": {"confidence": "Moderate (resolved n=24)"}}) == []
+    assert errs({**BASE, "report": {"confidence": "Moderate (resolved n=24)"}}) != []
+    assert errs({**BASE, "report": {"confidence": "design-stage"}}) == []
+    assert errs({**BASE, "report": {"confidence": "high"}}) == []
     assert errs({**BASE, "phase": "Evidence", "design_status": "designed",
                  "gate_status": "pending", "simulation_status": "complete"}) == []
 def test_required_keys_enforced():
@@ -85,11 +86,17 @@ def test_task11_object_or_array_and_relaxed_required():
     assert errs({**BASE, "findings": {"entries": [], "summary": "x"}}) == []
     assert errs({**BASE, "findings": [{"id": "F-1", "statement": "s"}]}) == []
     assert errs({**BASE, "findings": [{"id": "F-1", "kind": "bogus"}]}) != []
-    assert errs({**BASE, "literature_anchors": {"bib_keys": ["a"]}}) == []
+    assert errs({**BASE, "literature_anchors": {"bib_keys": ["a"]}}) != []
     assert errs({**BASE, "literature_anchors": [{"cite": "c"}]}) == []
     assert errs({**BASE, "conclusion_verdicts": {"biological_validation": "ok"}}) == []
     assert errs({**BASE, "conclusion_verdicts": [{"claim": "x", "verdict": "v"}]}) == []
     assert errs({**BASE, "behavior_tests": [{"name": "t", "requires_simulation": None}]}) == []
-    assert errs({**BASE, "implementation_requirements": [{"description": "d"}]}) == []
+    assert errs({**BASE, "implementation_requirements": [{"description": "d"}]}) != []
+    assert errs({**BASE, "implementation_status": "in_progress"}) != []
+    assert errs({**BASE, "implementation_status": "in-progress"}) == []
+    assert errs({**BASE, "runs": [{"id": "r", "status": "done"}]}) != []
+    assert errs({**BASE, "runs": [{"id": "r", "status": "complete"}]}) != []
+    assert errs({**BASE, "runs": [{"id": "r", "status": "completed"}]}) == []
+    assert errs({**BASE, "findings": [{"id": "f", "kind": "biological", "status": "confirmed", "statement": "s"}]}) != []
     assert errs({**BASE, "followup_proposals": [{"title": "t"}]}) == []
     assert errs({**BASE, "conclusion_logic": {"if_primary_tests_pass": "ok", "if_primary_tests_fail": "no"}}) == []
