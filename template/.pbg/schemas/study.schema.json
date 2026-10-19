@@ -30,21 +30,29 @@
       "description": "Lifecycle status. Two enums coexist: the v3 author-set values (draft, in-progress, completed, archived) and the dashboard's runtime sub-state values within a phase (planned, running, ran, complete, failed, invalid). The latter are what the parallel-agent's canonical studies use alongside the top-level `phase:` field. NOTE: superseded for new specs by the six independent multi-axis status fields below (design_status, implementation_status, simulation_status, evaluation_status, gate_status, expert_review_status). Kept for v3 back-compat — existing studies that set only `status:` continue to validate. Pass A infrastructure-feedback roadmap."
     },
     "design_status": {
+      "deprecated": true,
+      "x-replaced-by": "execution_status",
       "type": ["string", "null"],
       "enum": ["planned", "drafted", "expert_reviewed", "approved", null],
       "description": "Multi-axis status (Pass A). How mature the spec/design is. Independent of all other axes. Optional."
     },
     "implementation_status": {
+      "deprecated": true,
+      "x-replaced-by": "execution_status",
       "type": ["string", "null"],
       "enum": ["not_started", "partial", "complete", null],
       "description": "Multi-axis status (Pass A). Whether the code that backs the study (composites, processes, listeners) has been written. Independent of all other axes. Optional."
     },
     "simulation_status": {
+      "deprecated": true,
+      "x-replaced-by": "execution_status",
       "type": ["string", "null"],
       "enum": ["not_run", "running", "ran", "failed", null],
       "description": "Multi-axis status (Pass A). Whether the simulations described in simulation_set have been executed. Independent of all other axes. Optional."
     },
     "evaluation_status": {
+      "deprecated": true,
+      "x-replaced-by": "execution_status",
       "type": ["string", "null"],
       "enum": ["not_evaluated", "evaluated", "failed_evaluation", null],
       "description": "Multi-axis status (Pass A). Whether behavior_tests have been run against the simulation output. Independent of all other axes. Optional."
@@ -55,6 +63,8 @@
       "description": "Multi-axis status (Pass A). The pipeline-gate verdict — drives downstream unblocking. When set, the dashboard renders this as the headline status pill. Independent of all other axes. Optional."
     },
     "expert_review_status": {
+      "deprecated": true,
+      "x-replaced-by": "evidence_tier",
       "type": ["string", "null"],
       "enum": ["not_requested", "requested", "reviewed", "approved", "disputed", null],
       "description": "Multi-axis status (Pass A). Whether a domain expert has signed off on the study's framing/conclusions. Independent of all other axes. Optional."
@@ -92,6 +102,8 @@
       "description": "One-paragraph statement of what happened and what it establishes \u2014 the RESULT in the study Overview, supported by `findings`. Supersedes the prose `conclusion` blob for the Overview."
     },
     "objective": {
+      "deprecated": true,
+      "x-replaced-by": "experiment",
       "type": "string",
       "description": "DEPRECATED for new studies \u2014 use `experiment` (the study Overview's Test). One-paragraph statement of what this study measures or demonstrates."
     },
@@ -100,6 +112,8 @@
       "description": "Extended background / context. Multi-line YAML strings are fine."
     },
     "hypothesis": {
+      "deprecated": true,
+      "x-replaced-by": "claim",
       "type": "string",
       "description": "DEPRECATED for new studies \u2014 the Overview is Claim/Test/Result. Testable prediction; optional for exploratory studies."
     },
@@ -170,8 +184,10 @@
       }
     },
     "observables": {
+      "deprecated": true,
+      "x-replaced-by": "readouts",
       "type": "array",
-      "description": "Store-path bindings to observe during runs.",
+      "description": "DEPRECATED (v3) — superseded by `readouts`. Store-path bindings to observe during runs.",
       "items": {
         "type": "object",
         "required": ["name", "store_path"],
@@ -199,6 +215,8 @@
       }
     },
     "runs": {
+      "deprecated": true,
+      "x-replaced-by": "runs.db",
       "type": "array",
       "description": "DEPRECATED in v4. Use runs.db (per-study SQLite) as the source of truth — runs_meta + history. F2 made the DB canonical; this field remains only for v3 back-compat and is no longer written by /viva-study run-baseline. Will be removed in a future schema bump.",
       "items": {
@@ -385,7 +403,9 @@
       }
     },
     "expected_behavior": {
-      "description": "List of testable behavioral expectations. Accepts two shapes: (1) legacy free-form strings for exploratory studies, or (2) structured DSL dicts with (name, en, given, measure, expect) for automated assertion via vivarium_workbench.lib.expected_behavior.evaluate().",
+      "deprecated": true,
+      "x-replaced-by": "behavior_tests",
+      "description": "DEPRECATED (v3) — superseded by `behavior_tests`. List of testable behavioral expectations. Accepts two shapes: (1) legacy free-form strings for exploratory studies, or (2) structured DSL dicts with (name, en, given, measure, expect) for automated assertion via vivarium_workbench.lib.expected_behavior.evaluate().",
       "oneOf": [
         {
           "type": "array",
