@@ -26,3 +26,27 @@ def test_phase_status_vocab_widened():
                  ("simulation_status","not_run"),("evaluation_status","pending_review"),
                  ("expert_review_status","pending"),("design_status","drafted")]:
         assert errs({**BASE, f: v}) == [], (f, v)
+
+
+def test_conclusion_verdicts_is_array():
+    assert errs({**BASE, "conclusion_verdicts": [{"claim": "x", "verdict": "supported"}]}) == []
+def test_enforced_params_is_array():
+    assert errs({**BASE, "enforced_params": [{"name": "p", "value": 1}]}) == []
+def test_design_pivot_required_empty_list_ok():
+    assert errs({**BASE, "design_pivot_required": []}) == []
+def test_readouts_item_requires_name():
+    assert errs({**BASE, "readouts": [{"name": "growth_rate"}]}) == []
+    assert errs({**BASE, "readouts": [{"units": "1/h"}]}) != []
+def test_findings_item_requires_core_keys():
+    good = {"id": "f1", "kind": "biological", "status": "confirms", "statement": "s"}
+    assert errs({**BASE, "findings": [good]}) == []
+def test_study_without_any_baseline_errors():
+    assert errs({"name": "t"}) != []
+def test_other_canonical_arrays():
+    for k, item in [("behavior_tests", {"name": "n"}), ("expected_behavior", {"name": "n"}),
+                    ("literature_anchors", {"cite": "c"}), ("implementation_requirements", {"title": "t"}),
+                    ("simulation_set", {"name": "n"})]:
+        assert errs({**BASE, k: [item]}) == [], k
+        assert errs({**BASE, k: [{"zzz": 1}]}) != [], k
+    assert errs({**BASE, "limitations": ["a"]}) == []
+    assert errs({**BASE, "expected_behavior": ["free string"]}) != []
