@@ -100,3 +100,14 @@ def test_task11_object_or_array_and_relaxed_required():
     assert errs({**BASE, "findings": [{"id": "f", "kind": "biological", "status": "confirmed", "statement": "s"}]}) != []
     assert errs({**BASE, "followup_proposals": [{"title": "t"}]}) == []
     assert errs({**BASE, "conclusion_logic": {"if_primary_tests_pass": "ok", "if_primary_tests_fail": "no"}}) == []
+
+def test_comparison_study_without_baseline_validates():
+    assert errs({"name": "t", "comparison_operands": {"operand_a": "x", "operand_b": "y"}}) == []
+    assert errs({"name": "t", "comparison_operands": {"operand_a": "x", "operand_b": {"run": "r"}}}) == []
+
+def test_comparison_requires_operand_b():
+    assert errs({"name": "t", "comparison_operands": {"operand_a": "x"}}) != []
+
+def test_run_config_comparison_unconstrained():
+    assert errs({**BASE, "comparison": {"seeds": 1, "generations": 2}}) == []
+    assert "comparison" not in SCHEMA["properties"]

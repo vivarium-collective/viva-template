@@ -5,9 +5,19 @@
   "description": "Schema for a viva-superpowers study definition (studies/<slug>/study.yaml). Accepts schema_version 3 (legacy: baseline is a non-empty list, observables/variants are top-level) and 4 (current: conditions{baseline,variants,model_settings,expert_inputs} groups them, plus the second-tier narrative fields — report, study_card, biological_summary, literature_anchors, design_pivot_required, conclusion_verdicts, runtime, enforced_params, follow_up_of — that the dnaa investigation evolved). All v4 fields are optional; a v3 spec validates unchanged. New scaffolds should write schema_version: 4 with the narrative-spine fields present (empty or commented) so they prompt the author to fill them in.",
   "type": "object",
   "required": ["name"],
-  "anyOf": [{"required": ["baseline"]}, {"required": ["conditions"]}],
+  "anyOf": [{"required": ["baseline"]}, {"required": ["conditions"]}, {"required": ["comparison_operands"]}],
   "additionalProperties": true,
   "properties": {
+    "comparison_operands": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": ["operand_a", "operand_b"],
+      "description": "A comparison study: the two operands being compared. A study with `comparison` needs no baseline/conditions.",
+      "properties": {
+        "operand_a": {"type": "string", "description": "reference/measured operand (e.g. a cultivation group or study id)"},
+        "operand_b": {"description": "compared operand: a named run/study (string) or an inline run spec (object)"}
+      }
+    },
     "$schema": {
       "type": "string"
     },
