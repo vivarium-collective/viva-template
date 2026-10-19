@@ -60,7 +60,7 @@
     },
     "gate_status": {
       "type": ["string", "null"],
-      "enum": ["not_started", "blocked", "needs_calibration", "passed", "failed", "stale", "in_progress", "partial", "pending", "planned", null],
+      "enum": ["not_started", "blocked", "needs_calibration", "passed", "failed", "stale", "mixed", "in_progress", "partial", "pending", "planned", null],
       "description": "Multi-axis status (Pass A). The pipeline-gate verdict — drives downstream unblocking. When set, the dashboard renders this as the headline status pill. Independent of all other axes. Optional."
     },
     "expert_review_status": {
@@ -314,21 +314,14 @@
           "type": "array",
           "items": {
             "type": "object",
-            "required": ["file"],
             "additionalProperties": true,
-            "properties": {
-              "file": {"type": "string"},
-              "section": {"type": "string"}
-            }
+            "properties": {"file": {"type": "string"}, "section": {"type": "string"}}
           }
         },
         {
           "type": "object",
           "description": "Sectioned references object: keys are section names (e.g. 'expert', 'bib_keys', 'claims'), values are lists of strings.",
-          "additionalProperties": {
-            "type": "array",
-            "items": {"type": "string"}
-          }
+          "additionalProperties": {"type": "array", "items": {"type": "string"}}
         }
       ]
     },
@@ -462,7 +455,7 @@
                   },
                   "required_gate_status": {
                     "type": ["string", "null"],
-                    "enum": ["not_started", "blocked", "needs_calibration", "passed", "failed", "stale", "in_progress", "partial", "pending", "planned", null],
+                    "enum": ["not_started", "blocked", "needs_calibration", "passed", "failed", "stale", "mixed", "in_progress", "partial", "pending", "planned", null],
                     "description": "Pass A extension. The minimum gate_status the parent must reach for this dependency to count. Independent of `condition` — both can be specified; the dashboard ANDs them."
                   },
                   "outputs_used": {
@@ -509,7 +502,7 @@
             },
             "result": {
               "type": ["string", "null"],
-              "enum": ["not_started", "blocked", "needs_calibration", "passed", "failed", "stale", "in_progress", "partial", "pending", "planned", null],
+              "enum": ["not_started", "blocked", "needs_calibration", "passed", "failed", "stale", "mixed", "in_progress", "partial", "pending", "planned", null],
               "description": "Last-computed verdict. Mirrors the gate_status enum so the dashboard can lift it directly. `not_started` when the evaluator ran but the study has no coded behavior_tests to evaluate; null when the evaluator has not been run yet."
             },
             "blocked_by": {
@@ -641,12 +634,12 @@
           },
           "description": {"type": "string"},
           "measure": {
-            "type": "object",
+            "type": ["string", "object"],
             "additionalProperties": true,
             "properties": {"kind": {"type": "string"}}
           },
           "pass_if": {
-            "type": "object",
+            "type": ["string", "object"],
             "additionalProperties": true,
             "properties": {"op": {"type": "string"}}
           },
@@ -698,21 +691,15 @@
           "properties": {
             "implementation_status": {"type": "string"},
             "biological_validation": {"type": "string"},
-            "pipeline_unblocks": {
-              "type": "array",
-              "items": {"type": "string"}
-            }
+            "pipeline_unblocks": {"type": "array", "items": {"type": "string"}}
           }
         },
         "if_primary_tests_fail": {
           "type": "object",
           "additionalProperties": true,
           "properties": {
-            "diagnose": {
-              "type": "array",
-              "items": {"type": "string"}
-            },
-            "block_downstream": {"type": "string"}
+            "diagnose": {"type": "array", "items": {"type": "string"}},
+            "block_downstream": {"type": ["boolean", "string"]}
           }
         }
       }
@@ -876,7 +863,18 @@
           },
           "status": {
             "type": "string",
-            "enum": ["planned", "confirms", "partial", "contradicts", "novel", "blocked", "confirmed", "informational", "open", "refutes"],
+            "enum": [
+              "planned",
+              "confirms",
+              "partial",
+              "contradicts",
+              "novel",
+              "blocked",
+              "confirmed",
+              "informational",
+              "open",
+              "refutes"
+            ],
             "description": "Pass 10A. How the finding relates to its expected reference. planned = a design-phase target finding stated before the study runs (no result yet); replaced by one of the realized values once evidence exists. confirms = model matches expectation. partial = model matches some aspects. contradicts = model diverges from expectation. novel = no prior expectation; finding surfaces something new."
           },
           "statement": {
@@ -884,7 +882,7 @@
             "description": "One-paragraph English claim. The headline a reader scans."
           },
           "evidence": {
-            "type": "object",
+            "type": ["object", "string"],
             "additionalProperties": true,
             "description": "Pass 10A. Optional. Where the finding came from. Common keys: from_run (run name), from_test (behavior_test name), observed (scalar/string measurement), units, window, reduction, smoking_gun (log/trace/diff), discovered_during (free-form provenance note). All sub-fields optional and loose."
           },
@@ -919,7 +917,7 @@
               "run_ids": {
                 "type": "array",
                 "description": "IDs of runs (from runs.db) the finding was extracted from.",
-                "items": {"type": "string"}
+                "items": {"type": ["string", "integer"]}
               },
               "simulation_config_hash": {
                 "type": ["string", "null"],

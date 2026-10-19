@@ -64,3 +64,15 @@ def test_required_keys_enforced():
     assert errs({**BASE, "enforced_params": [{"value": 1}]}) != []
 def test_free_text_verdict_ok():
     assert errs({**BASE, "conclusion_verdicts": [{"claim": "x", "verdict": "Partly supported; see section 3 for caveats."}]}) == []
+
+
+def test_task9_corpus_subtype_relaxations():
+    assert errs({**BASE, "behavior_tests": [{"name": "n", "measure": "growth within band", "pass_if": "ratio>1"}]}) == []
+    assert errs({**BASE, "behavior_tests": [{"name": "n", "measure": {"kind": "k"}, "pass_if": {"op": ">"}}]}) == []
+    f = {"id": "f", "kind": "computational", "status": "confirms", "statement": "s",
+         "provenance": {"run_ids": [123]}, "evidence": "prose"}
+    assert errs({**BASE, "findings": [f]}) == []
+    assert errs({**BASE, "model_change": "narrative string"}) == []
+    assert errs({**BASE, "references": [{"section": "s"}]}) == []
+    assert errs({**BASE, "conclusion_logic": {"if_primary_tests_fail": {"block_downstream": True}}}) == []
+    assert errs({**BASE, "gate_status": "mixed"}) == []
