@@ -4,7 +4,8 @@
   "title": "study.yaml (v3/v4)",
   "description": "Schema for a viva-superpowers study definition (studies/<slug>/study.yaml). Accepts schema_version 3 (legacy: baseline is a non-empty list, observables/variants are top-level) and 4 (current: conditions{baseline,variants,model_settings,expert_inputs} groups them, plus the second-tier narrative fields — report, study_card, biological_summary, literature_anchors, design_pivot_required, conclusion_verdicts, runtime, enforced_params, follow_up_of — that the dnaa investigation evolved). All v4 fields are optional; a v3 spec validates unchanged. New scaffolds should write schema_version: 4 with the narrative-spine fields present (empty or commented) so they prompt the author to fill them in.",
   "type": "object",
-  "required": ["name", "baseline"],
+  "required": ["name"],
+  "anyOf": [{"required": ["baseline"]}, {"required": ["conditions"]}],
   "additionalProperties": true,
   "properties": {
     "$schema": {
@@ -40,21 +41,21 @@
       "deprecated": true,
       "x-replaced-by": "execution_status",
       "type": ["string", "null"],
-      "enum": ["not_started", "partial", "complete", null],
+      "enum": ["not_started", "partial", "complete", "prototype", "not_run", "smoke_run", "in-progress", null],
       "description": "Multi-axis status (Pass A). Whether the code that backs the study (composites, processes, listeners) has been written. Independent of all other axes. Optional."
     },
     "simulation_status": {
       "deprecated": true,
       "x-replaced-by": "execution_status",
       "type": ["string", "null"],
-      "enum": ["not_run", "running", "ran", "failed", null],
+      "enum": ["not_run", "running", "ran", "failed", "smoke_run", "completed", null],
       "description": "Multi-axis status (Pass A). Whether the simulations described in simulation_set have been executed. Independent of all other axes. Optional."
     },
     "evaluation_status": {
       "deprecated": true,
       "x-replaced-by": "execution_status",
       "type": ["string", "null"],
-      "enum": ["not_evaluated", "evaluated", "failed_evaluation", null],
+      "enum": ["not_evaluated", "evaluated", "failed_evaluation", "pending_review", "complete", "not_run", null],
       "description": "Multi-axis status (Pass A). Whether behavior_tests have been run against the simulation output. Independent of all other axes. Optional."
     },
     "gate_status": {
@@ -66,7 +67,7 @@
       "deprecated": true,
       "x-replaced-by": "evidence_tier",
       "type": ["string", "null"],
-      "enum": ["not_requested", "requested", "reviewed", "approved", "disputed", null],
+      "enum": ["not_requested", "requested", "reviewed", "approved", "disputed", "pending", null],
       "description": "Multi-axis status (Pass A). Whether a domain expert has signed off on the study's framing/conclusions. Independent of all other axes. Optional."
     },
     "execution_status": {
@@ -102,8 +103,6 @@
       "description": "One-paragraph statement of what happened and what it establishes \u2014 the RESULT in the study Overview, supported by `findings`. Supersedes the prose `conclusion` blob for the Overview."
     },
     "objective": {
-      "deprecated": true,
-      "x-replaced-by": "experiment",
       "type": "string",
       "description": "DEPRECATED for new studies \u2014 use `experiment` (the study Overview's Test). One-paragraph statement of what this study measures or demonstrates."
     },
@@ -1303,9 +1302,10 @@
       "additionalProperties": true,
       "properties": {
         "baseline": {
-          "type": "object",
+          "type": ["object", "array"],
+          "items": {"type": "object", "additionalProperties": true},
           "additionalProperties": true,
-          "description": "v4 baseline is a single object (not a list). For multiple baseline composites in v4, use a v3 spec or use sweep-style simulation_set entries.",
+          "description": "v4 baseline is a single object, or (as in v2ecoli/sms-ecoli studies) a list of baseline objects. For multiple baseline composites in v4, use a v3 spec or use sweep-style simulation_set entries.",
           "properties": {
             "composite": {"type": "string"},
             "params": {"type": "object", "additionalProperties": true}
