@@ -1,15 +1,15 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "title": "investigation.yaml (v1/v2)",
-  "description": "A named collection of Studies grouped under a shared research question, with an explicit cross-study dependency DAG and top-level acceptance criteria. Accepts schema_version 1 (minimal: name/title/question/hypothesis/description/studies/acceptance_criteria) and 2 (current: adds the narrative-spine fields the dnaa-replication investigation evolved — executive, scientific_argument, biological_story, lead, at_a_glance, how_to_read, glossary, guidelines). All v2 fields are optional; a v1 spec validates unchanged. New scaffolds should write schema_version: 2 with the narrative-spine fields present (empty or commented) so they prompt the author to fill them in.",
+  "title": "investigation.yaml (v1/v2/v3)",
+  "description": "A named collection of Studies grouped under a shared research question, with an explicit cross-study dependency DAG and top-level acceptance criteria. Accepts schema_version 1 (minimal: name/title/question/hypothesis/description/studies/acceptance_criteria), 2 (adds the narrative-spine fields the dnaa-replication investigation evolved — executive, scientific_argument, biological_story, lead, at_a_glance, how_to_read, glossary, guidelines), and 3 (adds the additive `concepts[]` overlay — the formalized-investigation-graph Concept grouping layer between Investigation and Study). All v2/v3 fields are optional and additive; a v1 or v2 spec validates unchanged. The Concept layer is derived-first (computed from plan_gates/plan_acts + membership) and only authored where derivation can't reach.",
   "type": "object",
   "additionalProperties": true,
   "required": ["name", "title"],
   "properties": {
     "schema_version": {
       "type": "integer",
-      "enum": [1, 2],
-      "description": "1 = legacy v1 (bare name/title/question/hypothesis/description/studies/acceptance_criteria). 2 = current (narrative-spine fields populated). New scaffolds emit 2."
+      "enum": [1, 2, 3],
+      "description": "1 = legacy v1 (bare name/title/question/hypothesis/description/studies/acceptance_criteria). 2 = narrative-spine fields populated. 3 = adds the additive concepts[] overlay. New scaffolds emit 2 (or 3 once the Concept layer is in use); all are back-compatible."
     },
     "name": {
       "type": "string",
@@ -50,6 +50,64 @@
         "pattern": "^[a-z0-9][a-z0-9_-]*$"
       },
       "uniqueItems": true
+    },
+    "concepts": {
+      "type": "array",
+      "description": "v3 additive overlay — the Concept grouping layer of the formalized investigation graph. A Concept is a persistent, revisable synthesis-grouping over member Studies (a coherent subquestion / explanatory theme) that sits between the Investigation and its Studies. Membership is many-to-many: a Study may belong to several Concepts without duplicating its runs or findings, and a Concept never replaces the Studies it groups. Concepts are DERIVED-FIRST (computed from plan_gates/plan_acts + membership, carrying `derived: true`) and only hand-authored where derivation can't reach (synthesis prose, assessments). The DAG and the Study nodes remain canonical and unchanged; this overlay is purely additive.",
+      "items": {
+        "type": "object",
+        "additionalProperties": true,
+        "required": ["id"],
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9_-]*$",
+            "description": "Stable, URL-safe Concept identifier. Survives grouping, renaming, and migration (identity invariant) — distinct from the human-facing title."
+          },
+          "title": {"type": "string", "description": "Human-readable Concept name."},
+          "question": {"type": "string", "description": "The coherent subquestion this Concept organizes its member Studies around."},
+          "from_gate": {"type": "string", "description": "When derived from a plan_gates gate, that gate id (e.g. 'A1', 'C'). Present on derived Concepts; absent on purely-authored ones."},
+          "from_act": {"type": "string", "description": "When derived from a plan_acts act, that act id — the narrative-spine act this Concept participates in."},
+          "member_studies": {
+            "type": "array",
+            "description": "Slugs of the Studies this Concept groups. Many-to-many: a study may appear under several Concepts.",
+            "items": {"type": "string", "pattern": "^[a-z0-9][a-z0-9_-]*$"},
+            "uniqueItems": true
+          },
+          "principal_propositions": {
+            "type": "array",
+            "description": "The scoped claims the Concept's synthesis assesses. Free-form strings or {statement, ...} objects.",
+            "items": {"oneOf": [{"type": "string"}, {"type": "object", "additionalProperties": true}]}
+          },
+          "synthesis": {"type": "string", "description": "Authored interpretive synthesis across the member Studies' findings — a new assertion with its own scope, not a concatenation of study conclusions. Empty on a freshly-derived Concept."},
+          "assessment": {
+            "type": "object",
+            "additionalProperties": true,
+            "description": "The Concept's evidence-based verdict on its principal proposition, with rationale. {verdict, basis}. The verdict uses the canonical vocab (unassessed|supported|qualified|inconclusive|refuted); it is bounded by the sharpest member, never inflated by execution success.",
+            "properties": {
+              "verdict": {
+                "type": "string",
+                "enum": ["unassessed", "supported", "qualified", "inconclusive", "refuted"]
+              },
+              "basis": {"type": "string", "description": "Why the verdict holds — which member evidence bounds it."}
+            }
+          },
+          "open_questions": {
+            "type": "array",
+            "description": "Unresolved questions the Concept owes (epistemic debt) — bucketed, never fabricated into a verdict.",
+            "items": {"type": "string"}
+          },
+          "org_state": {
+            "type": "string",
+            "enum": ["exploring", "consolidated", "reopened"],
+            "description": "Concept lifecycle / organization state — NOT a study-execution status and NOT a verdict. exploring = probes still diverging; consolidated = the concept's evidence is grouped and synthesized; reopened = new evidence reopened a settled synthesis."
+          },
+          "derived": {
+            "type": "boolean",
+            "description": "true = this Concept was computed from plan_gates/plan_acts + membership (ephemeral overlay, safe to recompute); false/absent = hand-authored (its synthesis/assessment are human content and must never be clobbered by re-derivation)."
+          }
+        }
+      }
     },
     "expert_docs": {
       "type": "array",
