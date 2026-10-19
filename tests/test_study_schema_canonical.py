@@ -76,3 +76,6 @@ def test_task9_corpus_subtype_relaxations():
     assert errs({**BASE, "references": [{"section": "s"}]}) == []
     assert errs({**BASE, "conclusion_logic": {"if_primary_tests_fail": {"block_downstream": True}}}) == []
     assert errs({**BASE, "gate_status": "mixed"}) == []
+def test_model_change_array_branch():
+    assert errs({**BASE, "model_change": [{"kind": "change_config", "path": "x.py", "detail": "d"}]}) == []
+    assert errs({**BASE, "model_change": "s"}) == []

@@ -539,7 +539,8 @@
             "notes": {"type": "string"}
           }
         },
-        {"type": "string"}
+        {"type": "string"},
+        {"type": "array", "items": {"type": "object", "additionalProperties": true}}
       ]
     },
     "key_assumptions": {
