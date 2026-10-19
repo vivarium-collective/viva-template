@@ -1305,7 +1305,7 @@
           "type": ["object", "array"],
           "items": {"type": "object", "additionalProperties": true},
           "additionalProperties": true,
-          "description": "v4 baseline is a single object, or (as in v2ecoli/sms-ecoli studies) a list of baseline objects. For multiple baseline composites in v4, use a v3 spec or use sweep-style simulation_set entries.",
+          "description": "Canonical v4 shape is an object: either a single {composite, params} config or a map of named conditions. An array of baseline objects is also accepted as a superset. For multiple baseline composites in v4, use a v3 spec or use sweep-style simulation_set entries.",
           "properties": {
             "composite": {"type": "string"},
             "params": {"type": "object", "additionalProperties": true}
