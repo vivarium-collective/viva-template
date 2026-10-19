@@ -47,7 +47,8 @@ def test_other_canonical_arrays():
                     ("literature_anchors", {"cite": "c"}), ("implementation_requirements", {"title": "t"}),
                     ("simulation_set", {"name": "n"})]:
         assert errs({**BASE, k: [item]}) == [], k
-        assert errs({**BASE, k: [{"zzz": 1}]}) != [], k
+        if k != "implementation_requirements":  # title no longer required (Task 11)
+            assert errs({**BASE, k: [{"zzz": 1}]}) != [], k
     assert errs({**BASE, "limitations": ["a"]}) == []
     assert errs({**BASE, "expected_behavior": ["free string"]}) != []
 
@@ -59,7 +60,6 @@ def test_corpus_widened_values_validate():
     assert errs({**BASE, "phase": "Evidence", "design_status": "designed",
                  "gate_status": "pending", "simulation_status": "complete"}) == []
 def test_required_keys_enforced():
-    assert errs({**BASE, "findings": [{"id": "f", "kind": "biological", "status": "confirms"}]}) != []
     assert errs({**BASE, "conclusion_verdicts": [{"claim": "x"}]}) != []
     assert errs({**BASE, "enforced_params": [{"value": 1}]}) != []
 def test_free_text_verdict_ok():
@@ -79,3 +79,17 @@ def test_task9_corpus_subtype_relaxations():
 def test_model_change_array_branch():
     assert errs({**BASE, "model_change": [{"kind": "change_config", "path": "x.py", "detail": "d"}]}) == []
     assert errs({**BASE, "model_change": "s"}) == []
+
+
+def test_task11_object_or_array_and_relaxed_required():
+    assert errs({**BASE, "findings": {"entries": [], "summary": "x"}}) == []
+    assert errs({**BASE, "findings": [{"id": "F-1", "statement": "s"}]}) == []
+    assert errs({**BASE, "findings": [{"id": "F-1", "kind": "bogus"}]}) != []
+    assert errs({**BASE, "literature_anchors": {"bib_keys": ["a"]}}) == []
+    assert errs({**BASE, "literature_anchors": [{"cite": "c"}]}) == []
+    assert errs({**BASE, "conclusion_verdicts": {"biological_validation": "ok"}}) == []
+    assert errs({**BASE, "conclusion_verdicts": [{"claim": "x", "verdict": "v"}]}) == []
+    assert errs({**BASE, "behavior_tests": [{"name": "t", "requires_simulation": None}]}) == []
+    assert errs({**BASE, "implementation_requirements": [{"description": "d"}]}) == []
+    assert errs({**BASE, "followup_proposals": [{"title": "t"}]}) == []
+    assert errs({**BASE, "conclusion_logic": {"if_primary_tests_pass": "ok", "if_primary_tests_fail": "no"}}) == []

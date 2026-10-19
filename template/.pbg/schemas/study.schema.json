@@ -645,7 +645,7 @@
             "properties": {"op": {"type": "string"}}
           },
           "units": {"type": "string"},
-          "requires_simulation": {"type": "string"},
+          "requires_simulation": {"type": ["string", "null"]},
           "blocked_by_requirements": {"type": "array", "items": {"type": "string"}},
           "calibration_anchor": {
             "type": "object",
@@ -687,7 +687,7 @@
       "additionalProperties": true,
       "properties": {
         "if_primary_tests_pass": {
-          "type": "object",
+          "type": ["object", "string"],
           "additionalProperties": true,
           "properties": {
             "implementation_status": {"type": "string"},
@@ -696,7 +696,7 @@
           }
         },
         "if_primary_tests_fail": {
-          "type": "object",
+          "type": ["object", "string"],
           "additionalProperties": true,
           "properties": {
             "diagnose": {"type": "array", "items": {"type": "string"}},
@@ -728,8 +728,7 @@
           "steps": {"type": "array", "items": {"type": "string"}},
           "defer_until": {"type": "string"},
           "unblocks": {"type": "array", "items": {"type": "string"}}
-        },
-        "required": ["title"]
+        }
       }
     },
     "bibliography": {
@@ -775,7 +774,7 @@
       "description": "Decide-phase output. Each entry is a proposal for a follow-up study motivated by a gap this study revealed. Lifted into a child study via /viva-study seed-from-followup, which stamps the child with `seeded_from:` and auto-adds the parent to its `pipeline_gate.prerequisites`.",
       "items": {
         "type": "object",
-        "required": ["id", "title", "motivation"],
+        "required": ["title"],
         "additionalProperties": true,
         "properties": {
           "id": {
@@ -820,144 +819,136 @@
                   "expected_outcome": {"type": "string"}
                 }
               },
-              "key_assumptions": {
-                "type": "array",
-                "items": {"type": "string"}
-              },
+              "key_assumptions": {"type": "array", "items": {"type": "string"}},
               "model_change": {
-                "oneOf": [
-                  {"type": "object", "additionalProperties": true},
-                  {"type": "string"}
-                ]
+                "oneOf": [{"type": "object", "additionalProperties": true}, {"type": "string"}]
               },
               "simulation_set": {
-                "oneOf": [
-                  {"type": "array"},
-                  {"type": "object", "additionalProperties": true}
-                ]
+                "oneOf": [{"type": "array"}, {"type": "object", "additionalProperties": true}]
               },
-              "pipeline_gate": {
-                "type": "object",
-                "additionalProperties": true
-              }
+              "pipeline_gate": {"type": "object", "additionalProperties": true}
             }
           }
         }
       }
     },
     "findings": {
-      "type": "array",
       "description": "First-class study findings (Pass A + Pass 10A; see notes/2026-05-16-findings-protocol.md). Each finding states something we learned and (optionally) ties it back to literature, expert references, and full reproducibility provenance. Required fields (Pass 10A): id, kind, status, statement. All other sub-objects are optional with loose internal shape (`additionalProperties: true`) so authors can experiment with fields beyond the minimum enforced here.",
-      "items": {
-        "type": "object",
-        "additionalProperties": true,
-        "properties": {
-          "id": {
-            "type": "string",
-            "pattern": "^[A-Za-z0-9][A-Za-z0-9_-]*$",
-            "description": "Stable slug — typically `F-01`, `F-02`, ... — unique within this study."
-          },
-          "kind": {
-            "type": "string",
-            "enum": ["biological", "computational", "methodological", "mechanistic"],
-            "description": "Pass 10A. What category of claim this finding makes. biological = a claim about the modeled system's biology (matches/contradicts/extends literature). computational = a software/wiring/listener bug or correctness finding. methodological = a finding about how studies should be run (sample size, aggregation, evaluation pipeline)."
-          },
-          "status": {
-            "type": "string",
-            "enum": [
-              "planned",
-              "confirms",
-              "partial",
-              "contradicts",
-              "novel",
-              "blocked",
-              "confirmed",
-              "informational",
-              "open",
-              "refutes"
-            ],
-            "description": "Pass 10A. How the finding relates to its expected reference. planned = a design-phase target finding stated before the study runs (no result yet); replaced by one of the realized values once evidence exists. confirms = model matches expectation. partial = model matches some aspects. contradicts = model diverges from expectation. novel = no prior expectation; finding surfaces something new."
-          },
-          "statement": {
-            "type": "string",
-            "description": "One-paragraph English claim. The headline a reader scans."
-          },
-          "evidence": {
-            "type": ["object", "string"],
-            "additionalProperties": true,
-            "description": "Pass 10A. Optional. Where the finding came from. Common keys: from_run (run name), from_test (behavior_test name), observed (scalar/string measurement), units, window, reduction, smoking_gun (log/trace/diff), discovered_during (free-form provenance note). All sub-fields optional and loose."
-          },
-          "expected": {
+      "oneOf": [
+        {
+          "type": "array",
+          "items": {
             "type": "object",
             "additionalProperties": true,
-            "description": "Pass 10A. Optional. The literature/reference comparator the finding is being judged against. Common keys: cites (list of bib_keys from references/papers.bib), range ([low, high]) OR threshold (number), summary (one-paragraph plain-English reference claim). All sub-fields optional and loose."
-          },
-          "expert_reference": {
-            "type": "object",
-            "additionalProperties": true,
-            "description": "Pass 10A. Optional. Pointer into a workspace expert PDF. Common keys: doc (expert_doc id from workspace.yaml.expert_docs), section (e.g. '§4.1'), quote (verbatim PDF excerpt), note (curator gloss when no clean quote exists). All sub-fields optional and loose."
-          },
-          "explanation": {
-            "type": "string",
-            "description": "Pass 10A. Optional. Multi-paragraph rationale — why we believe the finding, alternatives ruled out."
-          },
-          "next_action": {
-            "type": "string",
-            "description": "Pass 10A. Optional. Concrete one-liner — often 'Seed follow-up X' or 'Re-run with Y'."
-          },
-          "obsoleted_by": {
-            "type": "string",
-            "pattern": "^[A-Za-z0-9][A-Za-z0-9_-]*$",
-            "description": "Pass 10A. Optional. ID of a later finding that supersedes this one. Lets findings be append-only across runs while still chaining staleness."
-          },
-          "provenance": {
-            "type": "object",
-            "additionalProperties": true,
-            "description": "Pass A finding_provenance. Full reproducibility metadata for a single finding. All sub-fields optional — populate what you have. Lets a reader (or downstream linter) check whether the finding is still backed by the current artifacts.",
             "properties": {
-              "run_ids": {
-                "type": "array",
-                "description": "IDs of runs (from runs.db) the finding was extracted from.",
-                "items": {"type": ["string", "integer"]}
+              "id": {
+                "type": "string",
+                "pattern": "^[A-Za-z0-9][A-Za-z0-9_-]*$",
+                "description": "Stable slug — typically `F-01`, `F-02`, ... — unique within this study."
               },
-              "simulation_config_hash": {
-                "type": ["string", "null"],
-                "description": "Hash of the simulation config (composite + params) used to produce the underlying runs."
+              "kind": {
+                "type": "string",
+                "enum": ["biological", "computational", "methodological", "mechanistic"],
+                "description": "Pass 10A. What category of claim this finding makes. biological = a claim about the modeled system's biology (matches/contradicts/extends literature). computational = a software/wiring/listener bug or correctness finding. methodological = a finding about how studies should be run (sample size, aggregation, evaluation pipeline)."
               },
-              "model_commit_hash": {
-                "type": ["string", "null"],
-                "description": "Git commit of the model/composite code that produced the underlying runs."
+              "status": {
+                "type": "string",
+                "enum": [
+                  "planned",
+                  "confirms",
+                  "partial",
+                  "contradicts",
+                  "novel",
+                  "blocked",
+                  "confirmed",
+                  "informational",
+                  "open",
+                  "refutes"
+                ],
+                "description": "Pass 10A. How the finding relates to its expected reference. planned = a design-phase target finding stated before the study runs (no result yet); replaced by one of the realized values once evidence exists. confirms = model matches expectation. partial = model matches some aspects. contradicts = model diverges from expectation. novel = no prior expectation; finding surfaces something new."
               },
-              "parca_cache_hash": {
-                "type": ["string", "null"],
-                "description": "Hash of the parca/sim_data cache used (when relevant)."
+              "statement": {
+                "type": "string",
+                "description": "One-paragraph English claim. The headline a reader scans."
               },
-              "random_seeds": {
-                "type": "array",
-                "description": "Random seeds the underlying runs were executed with.",
-                "items": {"type": ["integer", "string"]}
+              "evidence": {
+                "type": ["object", "string"],
+                "additionalProperties": true,
+                "description": "Pass 10A. Optional. Where the finding came from. Common keys: from_run (run name), from_test (behavior_test name), observed (scalar/string measurement), units, window, reduction, smoking_gun (log/trace/diff), discovered_during (free-form provenance note). All sub-fields optional and loose."
               },
-              "analysis_script": {
-                "type": ["string", "null"],
-                "description": "Path or dotted function reference to the analysis code that derived the finding from raw output."
+              "expected": {
+                "type": "object",
+                "additionalProperties": true,
+                "description": "Pass 10A. Optional. The literature/reference comparator the finding is being judged against. Common keys: cites (list of bib_keys from references/papers.bib), range ([low, high]) OR threshold (number), summary (one-paragraph plain-English reference claim). All sub-fields optional and loose."
               },
-              "evaluator_version": {
-                "type": ["string", "null"],
-                "description": "Version string of the evaluator/scorer that produced the finding."
+              "expert_reference": {
+                "type": "object",
+                "additionalProperties": true,
+                "description": "Pass 10A. Optional. Pointer into a workspace expert PDF. Common keys: doc (expert_doc id from workspace.yaml.expert_docs), section (e.g. '§4.1'), quote (verbatim PDF excerpt), note (curator gloss when no clean quote exists). All sub-fields optional and loose."
               },
-              "raw_data_artifact": {
-                "type": ["string", "null"],
-                "description": "Path or URI to raw output (e.g. runs.db path, emitter SQLite, NumPy archive)."
+              "explanation": {
+                "type": "string",
+                "description": "Pass 10A. Optional. Multi-paragraph rationale — why we believe the finding, alternatives ruled out."
               },
-              "metric_table_artifact": {
-                "type": ["string", "null"],
-                "description": "Path or URI to a structured metric table summarizing the finding (e.g. CSV/Parquet)."
+              "next_action": {
+                "type": "string",
+                "description": "Pass 10A. Optional. Concrete one-liner — often 'Seed follow-up X' or 'Re-run with Y'."
+              },
+              "obsoleted_by": {
+                "type": "string",
+                "pattern": "^[A-Za-z0-9][A-Za-z0-9_-]*$",
+                "description": "Pass 10A. Optional. ID of a later finding that supersedes this one. Lets findings be append-only across runs while still chaining staleness."
+              },
+              "provenance": {
+                "type": "object",
+                "additionalProperties": true,
+                "description": "Pass A finding_provenance. Full reproducibility metadata for a single finding. All sub-fields optional — populate what you have. Lets a reader (or downstream linter) check whether the finding is still backed by the current artifacts.",
+                "properties": {
+                  "run_ids": {
+                    "type": "array",
+                    "description": "IDs of runs (from runs.db) the finding was extracted from.",
+                    "items": {"type": ["string", "integer"]}
+                  },
+                  "simulation_config_hash": {
+                    "type": ["string", "null"],
+                    "description": "Hash of the simulation config (composite + params) used to produce the underlying runs."
+                  },
+                  "model_commit_hash": {
+                    "type": ["string", "null"],
+                    "description": "Git commit of the model/composite code that produced the underlying runs."
+                  },
+                  "parca_cache_hash": {
+                    "type": ["string", "null"],
+                    "description": "Hash of the parca/sim_data cache used (when relevant)."
+                  },
+                  "random_seeds": {
+                    "type": "array",
+                    "description": "Random seeds the underlying runs were executed with.",
+                    "items": {"type": ["integer", "string"]}
+                  },
+                  "analysis_script": {
+                    "type": ["string", "null"],
+                    "description": "Path or dotted function reference to the analysis code that derived the finding from raw output."
+                  },
+                  "evaluator_version": {
+                    "type": ["string", "null"],
+                    "description": "Version string of the evaluator/scorer that produced the finding."
+                  },
+                  "raw_data_artifact": {
+                    "type": ["string", "null"],
+                    "description": "Path or URI to raw output (e.g. runs.db path, emitter SQLite, NumPy archive)."
+                  },
+                  "metric_table_artifact": {
+                    "type": ["string", "null"],
+                    "description": "Path or URI to a structured metric table summarizing the finding (e.g. CSV/Parquet)."
+                  }
+                }
               }
             }
           }
         },
-        "required": ["id", "kind", "status", "statement"]
-      }
+        {"type": "object", "additionalProperties": true}
+      ]
     },
     "seeded_from": {
       "type": "object",
@@ -1126,37 +1117,42 @@
       "description": "v4 narrative field — multi-paragraph plain-English mechanism summary. Distinct from `report.main_insight` (one sentence) and `study_card.mechanism` (one paragraph). This is the 'textbook write-up' a non-modeler would read to understand what the study is about. Markdown allowed."
     },
     "literature_anchors": {
-      "type": "array",
       "description": "v4 narrative field — testable expectations from the literature, paired with how they're measured in the model. Each entry pins a literature claim to a model observable and tracks its current status in the workspace. Lets a reviewer audit 'did we actually implement this?' without reading code.",
-      "items": {
-        "type": "object",
-        "additionalProperties": true,
-        "properties": {
-          "expectation": {
-            "type": "string",
-            "description": "What the literature claims (e.g. 'DnaA-ATP / total DnaA ≈ 20-50% during steady growth')."
-          },
-          "cite": {"type": "string", "description": "citation key for a reference"},
-          "model_observable": {
-            "type": "string",
-            "description": "How to measure this in the simulation (e.g. 'bulk[DnaA_ATP] / (bulk[DnaA_apo] + bulk[DnaA_ATP] + bulk[DnaA_ADP])')."
-          },
-          "source": {
-            "type": "string",
-            "description": "Bib-key or short literature citation (e.g. 'Boesen 2024 PNAS', 'Skarstad 1986')."
-          },
-          "status_in_workspace": {
-            "type": "string",
-            "description": "Free-form; common values: 'Not yet measurable — species don't exist yet' | 'Already available via X listener' | 'Partial — only Y is plumbed' | 'Verified — observed value matches'."
-          },
-          "cites": {
-            "type": "array",
-            "items": {"type": "string"},
-            "description": "Optional bib_key list (preferred over the free-form `source` for new entries)."
+      "oneOf": [
+        {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": true,
+            "properties": {
+              "expectation": {
+                "type": "string",
+                "description": "What the literature claims (e.g. 'DnaA-ATP / total DnaA ≈ 20-50% during steady growth')."
+              },
+              "cite": {"type": "string", "description": "citation key for a reference"},
+              "model_observable": {
+                "type": "string",
+                "description": "How to measure this in the simulation (e.g. 'bulk[DnaA_ATP] / (bulk[DnaA_apo] + bulk[DnaA_ATP] + bulk[DnaA_ADP])')."
+              },
+              "source": {
+                "type": "string",
+                "description": "Bib-key or short literature citation (e.g. 'Boesen 2024 PNAS', 'Skarstad 1986')."
+              },
+              "status_in_workspace": {
+                "type": "string",
+                "description": "Free-form; common values: 'Not yet measurable — species don't exist yet' | 'Already available via X listener' | 'Partial — only Y is plumbed' | 'Verified — observed value matches'."
+              },
+              "cites": {
+                "type": "array",
+                "items": {"type": "string"},
+                "description": "Optional bib_key list (preferred over the free-form `source` for new entries)."
+              }
+            },
+            "required": ["cite"]
           }
         },
-        "required": ["cite"]
-      }
+        {"type": "object", "additionalProperties": true}
+      ]
     },
     "design_pivot_required": {
       "type": "array",
@@ -1190,16 +1186,21 @@
       }
     },
     "conclusion_verdicts": {
-      "type": "array",
       "description": "v4 narrative field — three-track verdict block. Distinct from `conclusion_logic` (which is the if-pass/if-fail decision tree). dnaa established three separable dimensions a study can pass/fail on: regression_compatibility (does the code still build/run cleanly?), biological_validation (does it match the literature?), explanatory_gain (did we learn something new?). Each track is {result: PASS|FAIL|MIXED|PENDING, basis: '<why>'}. Lets the dashboard render a 'PASS on regression but MIXED on biology' verdict instead of forcing one boolean.",
-      "items": {
-        "type": "object",
-        "additionalProperties": true,
-        "anyOf": [
-          {"required": ["claim", "verdict"]},
-          {"required": ["statement", "verdict"]}
-        ]
-      }
+      "oneOf": [
+        {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": true,
+            "anyOf": [
+              {"required": ["claim", "verdict"]},
+              {"required": ["statement", "verdict"]}
+            ]
+          }
+        },
+        {"type": "object", "additionalProperties": true}
+      ]
     }
   }
 }
