@@ -189,22 +189,25 @@ def test_findings_mixed_minimal_and_full_validates(validator):
     validator.validate(spec)
 
 
-def test_finding_missing_id_rejected(validator):
+def test_finding_missing_id_accepted(validator):
+    """Relaxed in the canonical redesign (#76): `id` is optional — several real
+    sms-ecoli studies author findings without one."""
     spec = _minimal_v3_study(
         findings=[
             {"kind": "biological", "status": "confirms", "statement": "no id here"}
         ]
     )
-    with pytest.raises(jsonschema.ValidationError):
-        validator.validate(spec)
+    validator.validate(spec)
 
 
-def test_finding_missing_statement_rejected(validator):
+def test_finding_missing_statement_accepted(validator):
+    """Relaxed in the canonical redesign (#76): `statement` is optional — 12 real
+    sms-ecoli studies carry findings without one, and synthesizing one would be
+    fabrication."""
     spec = _minimal_v3_study(
         findings=[{"id": "F-01", "kind": "biological", "status": "confirms"}]
     )
-    with pytest.raises(jsonschema.ValidationError):
-        validator.validate(spec)
+    validator.validate(spec)
 
 
 def test_finding_extra_fields_allowed(validator):

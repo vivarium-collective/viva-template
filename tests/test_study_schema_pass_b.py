@@ -87,10 +87,13 @@ def test_explicit_kind_single_validates(validator):
     validator.validate(spec)
 
 
-def test_object_shape_simulation_set_validates(validator):
-    """The forward-compat object shape on simulation_set continues to validate."""
+def test_object_shape_simulation_set_rejected(validator):
+    """The v3 forward-compat object shape was removed in the canonical redesign
+    (#76): `simulation_set` is now array-only. No real study uses the object
+    form, so this is a corpus-safe tightening."""
     spec = _study({"foo": "bar", "anything": 1})
-    validator.validate(spec)
+    with pytest.raises(jsonschema.ValidationError):
+        validator.validate(spec)
 
 
 # ---------------------------------------------------------------------------
@@ -218,12 +221,16 @@ def test_sweep_axis_empty_values_rejected(validator):
         validator.validate(spec)
 
 
-def test_sweep_kind_invalid_rejected(validator):
+def test_free_form_kind_accepted(validator):
+    """`kind` is a free-form run-type label in the real corpus (`simulation`,
+    `analysis`, `parca`, `sensitivity_analysis`, ...), so it is NOT enum-locked
+    to single/sweep. Only the reserved value `sweep` triggers structured-sweep
+    validation (see the sweep tests below)."""
     spec = _study([
-        {"kind": "invalid", "name": "broken", "axes": [{"parameter": "x", "values": [1]}]}
+        {"kind": "simulation", "name": "a-run"},
+        {"kind": "sensitivity_analysis", "name": "sa-run"},
     ])
-    with pytest.raises(jsonschema.ValidationError):
-        validator.validate(spec)
+    validator.validate(spec)
 
 
 def test_sweep_test_result_invalid_enum_rejected(validator):
