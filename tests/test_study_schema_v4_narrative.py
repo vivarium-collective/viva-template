@@ -97,20 +97,39 @@ class TestRuntime:
 
 
 class TestEnforcedParams:
-    def test_flat_shape(self, validator):
+    # Canonical redesign (#76): enforced_params is now an array of {name, ...}
+    # objects (migrated from the v3 flat/wrapped dict shapes). Each item
+    # requires `name`; `value`/`why`/`source` are optional free-form.
+    def test_array_minimal(self, validator):
         spec = _base_v4_study() | {
-            "enforced_params": {"dnaA_intrinsic_hydrolysis_rate_per_min": 0.046}
+            "enforced_params": [{"name": "dnaA_intrinsic_hydrolysis_rate_per_min"}]
         }
         validator.validate(spec)
 
-    def test_wrapped_shape(self, validator):
+    def test_array_with_value_and_source(self, validator):
         spec = _base_v4_study() | {
-            "enforced_params": {
-                "params": {"dnaA_intrinsic_hydrolysis_rate_per_min": 0.046},
-                "source": "Boesen 2024 PNAS",
-            }
+            "enforced_params": [
+                {
+                    "name": "dnaA_intrinsic_hydrolysis_rate_per_min",
+                    "value": 0.046,
+                    "source": "Boesen 2024 PNAS",
+                }
+            ]
         }
         validator.validate(spec)
+
+    def test_item_missing_name_rejected(self, validator):
+        spec = _base_v4_study() | {"enforced_params": [{"value": 0.046}]}
+        with pytest.raises(jsonschema.ValidationError):
+            validator.validate(spec)
+
+    def test_dict_shape_rejected(self, validator):
+        """The v3 flat/wrapped dict shapes no longer validate (array-only)."""
+        spec = _base_v4_study() | {
+            "enforced_params": {"dnaA_intrinsic_hydrolysis_rate_per_min": 0.046}
+        }
+        with pytest.raises(jsonschema.ValidationError):
+            validator.validate(spec)
 
 
 class TestConditions:
@@ -191,17 +210,29 @@ class TestStudyCard:
 
 class TestLiteratureAnchors:
     def test_minimal_anchor(self, validator):
+        # Tightened in #77 (array-only; `cite` required) — a literature anchor
+        # must name the reference it pins to.
         spec = _base_v4_study() | {
             "literature_anchors": [
                 {
                     "expectation": "DnaA-ATP / total DnaA ≈ 20-50%",
                     "model_observable": "bulk[DnaA_ATP] / bulk[DnaA_total]",
+                    "cite": "Boesen2024",
                     "source": "Boesen 2024",
                     "status_in_workspace": "Not yet measurable",
                 }
             ]
         }
         validator.validate(spec)
+
+    def test_anchor_missing_cite_rejected(self, validator):
+        spec = _base_v4_study() | {
+            "literature_anchors": [
+                {"expectation": "x", "model_observable": "y", "source": "z"}
+            ]
+        }
+        with pytest.raises(jsonschema.ValidationError):
+            validator.validate(spec)
 
 
 class TestDesignPivot:
@@ -241,14 +272,17 @@ class TestConclusionVerdicts:
         }
         validator.validate(spec)
 
-    def test_invalid_result_enum(self, validator):
+    def test_freeform_result_accepted(self, validator):
+        """Relaxed in the canonical redesign (#76): the three-track object form
+        is `additionalProperties: true` with no `result` enum, because real
+        studies use values beyond PASS/FAIL/MIXED/PENDING (e.g. `POSITIVE` for
+        explanatory_gain). Constraining it would force fabricated verdicts."""
         spec = _base_v4_study() | {
             "conclusion_verdicts": {
                 "biological_validation": {"result": "OK"},
             }
         }
-        with pytest.raises(jsonschema.ValidationError):
-            validator.validate(spec)
+        validator.validate(spec)
 
 
 class TestBiologicalSummary:
@@ -275,10 +309,9 @@ class TestFullV4Composition:
         """A maximally-populated v4 spec must validate as a whole."""
         spec = _base_v4_study() | {
             "runtime": {"subprocess_timeout_s": 7200, "default_emitter": "sqlite"},
-            "enforced_params": {
-                "params": {"k": 0.046},
-                "source": "Boesen2024",
-            },
+            "enforced_params": [
+                {"name": "k", "value": 0.046, "source": "Boesen2024"},
+            ],
             "conditions": {
                 "baseline": {"composite": "pkg.composites.foo"},
                 "variants": [{"name": "no-k"}],
@@ -291,7 +324,7 @@ class TestFullV4Composition:
             "study_card": {"goal": "Test the thing."},
             "biological_summary": "DnaA cycles between states.",
             "literature_anchors": [
-                {"expectation": "x", "model_observable": "y", "source": "z"}
+                {"expectation": "x", "model_observable": "y", "cite": "z2024", "source": "z"}
             ],
             "design_pivot_required": [
                 {"id": "P-01", "question": "A or B?", "alternatives": ["A", "B"]}

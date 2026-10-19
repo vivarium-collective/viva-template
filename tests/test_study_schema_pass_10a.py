@@ -67,7 +67,10 @@ def test_minimal_finding_validates(validator):
     validator.validate(spec)
 
 
-def test_finding_missing_kind_rejected(validator):
+def test_finding_missing_kind_accepted(validator):
+    """Relaxed in the canonical redesign (#76): findings no longer require
+    `kind`. Restoring it needs expert classification of the real corpus
+    (the findings-classification worklist), so it stays optional for now."""
     spec = _study(
         [
             {
@@ -77,11 +80,12 @@ def test_finding_missing_kind_rejected(validator):
             }
         ]
     )
-    with pytest.raises(jsonschema.ValidationError):
-        validator.validate(spec)
+    validator.validate(spec)
 
 
-def test_finding_missing_status_rejected(validator):
+def test_finding_missing_status_accepted(validator):
+    """Relaxed in the canonical redesign (#76): `status` is optional (same
+    expert-classification reason as `kind`). Enum still enforced when present."""
     spec = _study(
         [
             {
@@ -91,12 +95,13 @@ def test_finding_missing_status_rejected(validator):
             }
         ]
     )
-    with pytest.raises(jsonschema.ValidationError):
-        validator.validate(spec)
+    validator.validate(spec)
 
 
-def test_finding_missing_id_still_rejected(validator):
-    """Existing Pass A constraint: id is required."""
+def test_finding_missing_id_accepted(validator):
+    """Relaxed in the canonical redesign (#76): several real sms-ecoli studies
+    author findings without an `id`, so it is no longer required. The `id`
+    pattern is still enforced when present."""
     spec = _study(
         [
             {
@@ -106,12 +111,13 @@ def test_finding_missing_id_still_rejected(validator):
             }
         ]
     )
-    with pytest.raises(jsonschema.ValidationError):
-        validator.validate(spec)
+    validator.validate(spec)
 
 
-def test_finding_missing_statement_still_rejected(validator):
-    """Existing Pass A constraint: statement is required."""
+def test_finding_missing_statement_accepted(validator):
+    """Relaxed in the canonical redesign (#76): 12 real sms-ecoli studies carry
+    findings without a `statement`, and synthesizing one would be fabrication,
+    so it is no longer required."""
     spec = _study(
         [
             {
@@ -121,8 +127,7 @@ def test_finding_missing_statement_still_rejected(validator):
             }
         ]
     )
-    with pytest.raises(jsonschema.ValidationError):
-        validator.validate(spec)
+    validator.validate(spec)
 
 
 # ---------------------------------------------------------------------------

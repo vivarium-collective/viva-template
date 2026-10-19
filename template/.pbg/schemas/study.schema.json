@@ -530,8 +530,51 @@
     },
     "simulation_set": {
       "type": "array",
-      "description": "Section 3 of the canonical 8-section structure. Replaces v3 variants + interventions. Array of run-plan objects, each with a required `name`.",
-      "items": {"type": "object", "additionalProperties": true, "required": ["name"]}
+      "description": "Section 3 of the canonical 8-section structure. Replaces v3 variants + interventions. Array-only (the v3 object form was removed in #76). Each item is a run plan with a required `name`. `kind: single` (default, absent) is free-form; `kind: sweep` is a structured Cartesian-product parameter sweep whose `axes` are validated.",
+      "items": {
+        "type": "object",
+        "additionalProperties": true,
+        "required": ["name"],
+        "properties": {
+          "kind": {"type": "string", "description": "Optional free-form run-type label (e.g. `simulation`, `analysis`, `parca`, `sensitivity_analysis`). The reserved value `sweep` additionally triggers structured-sweep validation (`axes` required)."},
+          "name": {"type": "string"},
+          "axes": {
+            "type": "array",
+            "minItems": 1,
+            "description": "Swept axes (sweep entries). Multiple axes = Cartesian product.",
+            "items": {
+              "type": "object",
+              "additionalProperties": true,
+              "required": ["parameter", "values"],
+              "properties": {
+                "parameter": {"type": "string", "description": "Dotted path or parameter id."},
+                "values": {"type": "array", "minItems": 1, "description": "Discrete values to sweep over."}
+              }
+            }
+          },
+          "runs": {
+            "type": "array",
+            "description": "POPULATED AFTER EXECUTION. Each entry: {axis_values, seed, run_id, metrics, test_results: {test_name: pass|fail|error|skipped}}.",
+            "items": {
+              "type": "object",
+              "additionalProperties": true,
+              "properties": {
+                "axis_values": {"type": "object", "additionalProperties": true},
+                "seed": {"type": "integer"},
+                "run_id": {"type": "string"},
+                "metrics": {"type": "object", "additionalProperties": true},
+                "test_results": {"type": "object", "additionalProperties": {"type": "string", "enum": ["pass", "fail", "error", "skipped"]}}
+              }
+            }
+          }
+        },
+        "allOf": [
+          {
+            "if": {"required": ["kind"], "properties": {"kind": {"const": "sweep"}}},
+            "then": {"required": ["axes"]}
+          }
+        ]
+      }
     },
     "model_change": {
       "description": "Section 4 of the canonical 8-section structure (paired with implementation_requirements). What code changes in the composite. Object shape is preferred; string shape accepted for terse summaries.",
