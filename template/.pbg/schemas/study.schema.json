@@ -34,33 +34,33 @@
       "deprecated": true,
       "x-replaced-by": "execution_status",
       "type": ["string", "null"],
-      "enum": ["planned", "drafted", "expert_reviewed", "approved", null],
+      "enum": ["planned", "drafted", "expert_reviewed", "approved", "designed", "complete", "in_progress", null],
       "description": "Multi-axis status (Pass A). How mature the spec/design is. Independent of all other axes. Optional."
     },
     "implementation_status": {
       "deprecated": true,
       "x-replaced-by": "execution_status",
       "type": ["string", "null"],
-      "enum": ["not_started", "partial", "complete", "prototype", "not_run", "smoke_run", "in-progress", null],
+      "enum": ["not_started", "partial", "complete", "prototype", "not_run", "smoke_run", "in-progress", "in_progress", "planned", null],
       "description": "Multi-axis status (Pass A). Whether the code that backs the study (composites, processes, listeners) has been written. Independent of all other axes. Optional."
     },
     "simulation_status": {
       "deprecated": true,
       "x-replaced-by": "execution_status",
       "type": ["string", "null"],
-      "enum": ["not_run", "running", "ran", "failed", "smoke_run", "completed", null],
+      "enum": ["not_run", "running", "ran", "failed", "smoke_run", "completed", "complete", "not_started", "planned", null],
       "description": "Multi-axis status (Pass A). Whether the simulations described in simulation_set have been executed. Independent of all other axes. Optional."
     },
     "evaluation_status": {
       "deprecated": true,
       "x-replaced-by": "execution_status",
       "type": ["string", "null"],
-      "enum": ["not_evaluated", "evaluated", "failed_evaluation", "pending_review", "complete", "not_run", null],
+      "enum": ["not_evaluated", "evaluated", "failed_evaluation", "pending_review", "complete", "not_run", "in_progress", "not_started", "planned", null],
       "description": "Multi-axis status (Pass A). Whether behavior_tests have been run against the simulation output. Independent of all other axes. Optional."
     },
     "gate_status": {
       "type": ["string", "null"],
-      "enum": ["not_started", "blocked", "needs_calibration", "passed", "failed", "stale", null],
+      "enum": ["not_started", "blocked", "needs_calibration", "passed", "failed", "stale", "in_progress", "partial", "pending", "planned", null],
       "description": "Multi-axis status (Pass A). The pipeline-gate verdict — drives downstream unblocking. When set, the dashboard renders this as the headline status pill. Independent of all other axes. Optional."
     },
     "expert_review_status": {
@@ -87,7 +87,7 @@
     },
     "phase": {
       "type": "string",
-      "enum": ["Design", "Build", "Simulate", "Evaluate", "Decide"],
+      "enum": ["Design", "Build", "Simulate", "Evaluate", "Decide", "Evidence"],
       "description": "Optional declaration of the study's current high-level phase. The 5-phase lifecycle (Design → Build → Simulate → Evaluate → Decide) is the canonical coarse-grained coordinate; the existing `status:` field captures the finer-grained runtime state within a phase. The enum is capitalized — the dashboard's study-detail.html template reads `study.phase` directly. If absent, the dashboard infers the phase from status + the presence of artifacts (spec fields filled, runs.db exists, etc.). See docs/concepts/vivarium-dashboard-model.md for the canonical 8-section structure."
     },
     "claim": {
@@ -225,7 +225,7 @@
           "id": {"type": "string"},
           "status": {
             "type": "string",
-            "enum": ["pending", "running", "completed", "failed"]
+            "enum": ["pending", "running", "completed", "failed", "complete", "done"]
           },
           "started_at": {"type": "string"},
           "completed_at": {"type": "string"},
@@ -403,7 +403,7 @@
     },
     "expected_behavior": {
       "type": "array",
-      "description": "List of testable behavioral expectations. Related to `behavior_tests` but NOT a pure legacy alias — the two coexist as distinct fields in some workspaces (e.g. v2ecoli mcs-* studies), so this is not auto-renamed. Accepts two shapes: (1) legacy free-form strings for exploratory studies, or (2) structured DSL dicts with (name, en, given, measure, expect) for automated assertion via vivarium_workbench.lib.expected_behavior.evaluate().",
+      "description": "List of testable behavioral expectations. Distinct from `behavior_tests`. Array of objects, each with a required `name`.",
       "items": {"type": "object", "additionalProperties": true, "required": ["name"]}
     },
     "expert_questions": {
@@ -462,7 +462,7 @@
                   },
                   "required_gate_status": {
                     "type": ["string", "null"],
-                    "enum": ["not_started", "blocked", "needs_calibration", "passed", "failed", "stale", null],
+                    "enum": ["not_started", "blocked", "needs_calibration", "passed", "failed", "stale", "in_progress", "partial", "pending", "planned", null],
                     "description": "Pass A extension. The minimum gate_status the parent must reach for this dependency to count. Independent of `condition` — both can be specified; the dashboard ANDs them."
                   },
                   "outputs_used": {
@@ -509,7 +509,7 @@
             },
             "result": {
               "type": ["string", "null"],
-              "enum": ["not_started", "blocked", "needs_calibration", "passed", "failed", "stale", null],
+              "enum": ["not_started", "blocked", "needs_calibration", "passed", "failed", "stale", "in_progress", "partial", "pending", "planned", null],
               "description": "Last-computed verdict. Mirrors the gate_status enum so the dashboard can lift it directly. `not_started` when the evaluator ran but the study has no coded behavior_tests to evaluate; null when the evaluator has not been run yet."
             },
             "blocked_by": {
@@ -527,7 +527,7 @@
     },
     "simulation_set": {
       "type": "array",
-      "description": "Section 3 of the canonical 8-section structure. Replaces v3 variants + interventions. Each entry is a concrete run plan. Pass B adds an optional `kind:` discriminator: when absent or `single`, the existing free-form single-run shape applies (back-compat). When `kind: sweep`, the entry is a structured parameter sweep with axes, candidates, and rejection reasons (see the Pass B sweep-table spec). Array shape preferred; object shape accepted for forward compatibility.",
+      "description": "Section 3 of the canonical 8-section structure. Replaces v3 variants + interventions. Array of run-plan objects, each with a required `name`.",
       "items": {"type": "object", "additionalProperties": true, "required": ["name"]}
     },
     "model_change": {
@@ -724,7 +724,7 @@
     },
     "implementation_requirements": {
       "type": "array",
-      "description": "Section 8 of the canonical 8-section structure (paired with model_change). Concrete actionable items. Array shape preferred; object shape accepted for forward compatibility.",
+      "description": "Section 8 of the canonical 8-section structure (paired with model_change). Array of concrete actionable items, each with a required `title`.",
       "items": {
         "type": "object",
         "additionalProperties": true,
@@ -871,12 +871,12 @@
           },
           "kind": {
             "type": "string",
-            "enum": ["biological", "computational", "methodological"],
+            "enum": ["biological", "computational", "methodological", "mechanistic"],
             "description": "Pass 10A. What category of claim this finding makes. biological = a claim about the modeled system's biology (matches/contradicts/extends literature). computational = a software/wiring/listener bug or correctness finding. methodological = a finding about how studies should be run (sample size, aggregation, evaluation pipeline)."
           },
           "status": {
             "type": "string",
-            "enum": ["planned", "confirms", "partial", "contradicts", "novel"],
+            "enum": ["planned", "confirms", "partial", "contradicts", "novel", "blocked", "confirmed", "informational", "open", "refutes"],
             "description": "Pass 10A. How the finding relates to its expected reference. planned = a design-phase target finding stated before the study runs (no result yet); replaced by one of the realized values once evidence exists. confirms = model matches expectation. partial = model matches some aspects. contradicts = model diverges from expectation. novel = no prior expectation; finding surfaces something new."
           },
           "statement": {
@@ -1016,7 +1016,7 @@
     },
     "enforced_params": {
       "type": "array",
-      "description": "v4 narrative field. Composite-parameter values the study REQUIRES be applied (param_enforcement gate). When set, the framework verifies after each run that the declared parameters match what the composite actually applied; mismatches surface as `ParamViolation` entries on the run row + a banner on the report. Accepts either the flat shape `{composite_param: expected_value, ...}` or the wrapped shape `{params: {...}, source: '<bib-key or PDF citation>'}` for traceability — the helper `load_enforced_params()` in pbg_superpowers/param_enforcement.py detects which shape was used. The schema is intentionally permissive (additionalProperties: true) because both shapes overlap and the framework owns the parsing.",
+      "description": "v4 narrative field. Composite-parameter values the study requires be applied (param_enforcement gate). Array of objects, each with a required `name` (plus e.g. `value`, `source`). Mismatches surface as `ParamViolation` entries on the run row.",
       "items": {"type": "object", "additionalProperties": true, "required": ["name"]}
     },
     "conditions": {
@@ -1080,7 +1080,7 @@
         },
         "confidence": {
           "type": "string",
-          "enum": ["high", "medium", "low"]
+          "description": "Free-text confidence statement (prose, e.g. 'Moderate (resolved n=24)')."
         },
         "evidence_quality": {
           "type": "string",
@@ -1137,6 +1137,7 @@
             "type": "string",
             "description": "What the literature claims (e.g. 'DnaA-ATP / total DnaA ≈ 20-50% during steady growth')."
           },
+          "cite": {"type": "string", "description": "citation key for a reference"},
           "model_observable": {
             "type": "string",
             "description": "How to measure this in the simulation (e.g. 'bulk[DnaA_ATP] / (bulk[DnaA_apo] + bulk[DnaA_ATP] + bulk[DnaA_ADP])')."

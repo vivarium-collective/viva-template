@@ -50,3 +50,17 @@ def test_other_canonical_arrays():
         assert errs({**BASE, k: [{"zzz": 1}]}) != [], k
     assert errs({**BASE, "limitations": ["a"]}) == []
     assert errs({**BASE, "expected_behavior": ["free string"]}) != []
+
+
+def test_corpus_widened_values_validate():
+    f = {"id": "f", "kind": "mechanistic", "status": "refutes", "statement": "s"}
+    assert errs({**BASE, "findings": [f]}) == []
+    assert errs({**BASE, "report": {"confidence": "Moderate (resolved n=24)"}}) == []
+    assert errs({**BASE, "phase": "Evidence", "design_status": "designed",
+                 "gate_status": "pending", "simulation_status": "complete"}) == []
+def test_required_keys_enforced():
+    assert errs({**BASE, "findings": [{"id": "f", "kind": "biological", "status": "confirms"}]}) != []
+    assert errs({**BASE, "conclusion_verdicts": [{"claim": "x"}]}) != []
+    assert errs({**BASE, "enforced_params": [{"value": 1}]}) != []
+def test_free_text_verdict_ok():
+    assert errs({**BASE, "conclusion_verdicts": [{"claim": "x", "verdict": "Partly supported; see section 3 for caveats."}]}) == []
