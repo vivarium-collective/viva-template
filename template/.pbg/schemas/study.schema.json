@@ -112,14 +112,14 @@
       "description": "Extended background / context. Multi-line YAML strings are fine."
     },
     "hypothesis": {
-      "deprecated": true,
-      "x-replaced-by": "claim",
       "type": "string",
-      "description": "DEPRECATED for new studies \u2014 the Overview is Claim/Test/Result. Testable prediction; optional for exploratory studies."
+      "description": "Testable prediction the study checks \u2014 a DISTINCT field from `claim` (the asserted finding) and `experiment` (what was built); they legitimately coexist. Optional for exploratory studies."
     },
     "conclusion": {
+      "deprecated": true,
+      "x-replaced-by": "result",
       "type": ["string", "null"],
-      "description": "Filled in after analysis. Leave null while status is draft/in-progress."
+      "description": "DEPRECATED \u2014 superseded by `result` for the Overview. Filled in after analysis; leave null while status is draft/in-progress."
     },
     "baseline": {
       "type": "array",
@@ -403,9 +403,7 @@
       }
     },
     "expected_behavior": {
-      "deprecated": true,
-      "x-replaced-by": "behavior_tests",
-      "description": "DEPRECATED (v3) — superseded by `behavior_tests`. List of testable behavioral expectations. Accepts two shapes: (1) legacy free-form strings for exploratory studies, or (2) structured DSL dicts with (name, en, given, measure, expect) for automated assertion via vivarium_workbench.lib.expected_behavior.evaluate().",
+      "description": "List of testable behavioral expectations. Related to `behavior_tests` but NOT a pure legacy alias — the two coexist as distinct fields in some workspaces (e.g. v2ecoli mcs-* studies), so this is not auto-renamed. Accepts two shapes: (1) legacy free-form strings for exploratory studies, or (2) structured DSL dicts with (name, en, given, measure, expect) for automated assertion via vivarium_workbench.lib.expected_behavior.evaluate().",
       "oneOf": [
         {
           "type": "array",
