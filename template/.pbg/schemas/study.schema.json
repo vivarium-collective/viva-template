@@ -833,7 +833,7 @@
       }
     },
     "findings": {
-      "description": "First-class study findings (Pass A + Pass 10A; see notes/2026-05-16-findings-protocol.md). Each finding states something we learned and (optionally) ties it back to literature, expert references, and full reproducibility provenance. Required fields (Pass 10A): id, kind, status, statement. All other sub-objects are optional with loose internal shape (`additionalProperties: true`) so authors can experiment with fields beyond the minimum enforced here.",
+      "description": "First-class study findings (Pass A + Pass 10A; see notes/2026-05-16-findings-protocol.md). Each finding states something we learned and (optionally) ties it back to literature, expert references, and full reproducibility provenance. Findings items are flexible; `kind` and `status`, when present, are enum-constrained. Sub-objects are optional with loose internal shape (`additionalProperties: true`) so authors can experiment with fields beyond the minimum enforced here.",
       "oneOf": [
         {
           "type": "array",
