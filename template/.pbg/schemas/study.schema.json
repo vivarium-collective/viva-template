@@ -90,6 +90,11 @@
       "enum": ["supported", "qualified", "inconclusive", "refuted", null],
       "description": "Two-axis ontology — the SCIENTIFIC VERDICT axis (what the evidence supports), meaningful once execution_status is `completed`. supported = results support the primary hypothesis/prediction; qualified = supported only under specified conditions or assumptions; inconclusive = evidence is insufficient, mixed, or unresolved; refuted = results contradict the tested hypothesis/prediction (an honest negative is a refuted verdict, not an execution failure). A verdict applies to the specific hypothesis being assessed, not the general value of the study. Optional; when absent the dashboard derives it from report.verdict / findings."
     },
+    "computed_verdict": {
+      "type": "string",
+      "enum": ["unassessed", "supported", "qualified", "inconclusive", "refuted"],
+      "description": "The CANONICAL computed verdict — a parallel COMPUTED slot projected by viva_superpowers.verdict_vocab.canonical_verdict from the existing coded/authored signals (pipeline_gate.gate_evaluator, report-card outcomes, conclusion_verdicts, authored verdict), standardizing the several study/card vocabularies onto one. Same vocab as the authored `verdict` plus an explicit `unassessed` (the state the authored field spelled as null). NEVER overwrites the authored `verdict`; when the two disagree the divergence is surfaced (diverges flag), not reconciled. Written by code only — authors leave it alone."
+    },
     "evidence_tier": {
       "type": ["string", "null"],
       "enum": ["conceptual_demonstration", "mechanistic_prediction", "calibrated", null],
