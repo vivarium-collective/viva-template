@@ -212,6 +212,58 @@
     "report_url": {
       "type": "string",
       "description": "S5: path to the checked-in HTML report. Relative to the investigation directory (typically just 'report.html'). Set automatically by the close mechanic when it copies the rendered report into investigations/<slug>/report.html. Lets the dashboard link to the immutable snapshot of what the investigation produced."
+    },
+    "report_synthesis": {
+      "type": "object",
+      "additionalProperties": true,
+      "description": "OPTIONAL authored override/enrichment of the investigation report's finding-first cross-study synthesis. The report generator (vivarium-workbench lib/investigation_report.py) DERIVES this synthesis deterministically from the member studies (AI-free: run-status/evidence-grade/claim separation, stage-grouped integrated findings, contradictions, roadmap, figure ranking) and reuses the canonical two-axis ontology (study_ontology.derive_verdict / derive_execution_status) + the needs-attention validation scan. Any section present and non-empty here REPLACES the corresponding derived section — use it only to correct or hand-author a section the deterministic pass gets wrong; leave it absent to take the derivation. All sub-fields are optional; shapes below mirror the rendered payload.",
+      "properties": {
+        "headline": {
+          "type": "object",
+          "additionalProperties": true,
+          "description": "Executive-summary override: the one-paragraph verdict for the investigation plus gate/plan-board status. Derived from the plan_board gates when absent."
+        },
+        "stages": {
+          "type": "array",
+          "description": "Integrated findings grouped by investigation stage (og-NN prefix). Each stage: { key, title, studies[], findings[] (quantitative where available), model_dependence (bool) }.",
+          "items": {"type": "object", "additionalProperties": true}
+        },
+        "claim_evidence": {
+          "type": "array",
+          "description": "Claim-evidence map: one row per top-level claim/acceptance criterion. Each: { claim, status (supported|conditional|unsupported|pending|inconclusive), supporting_studies[], contradicting_studies[], figure_refs[] }.",
+          "items": {"type": "object", "additionalProperties": true}
+        },
+        "contradictions": {
+          "type": "array",
+          "description": "Contradiction / uncertainty register. Each: { topic, kind (model-dependence|negative-result|finding-conflict|competing-framework), detail, studies[], discriminating_study }.",
+          "items": {"type": "object", "additionalProperties": true}
+        },
+        "continuity": {
+          "type": "object",
+          "additionalProperties": true,
+          "description": "Cross-study continuity: DAG edges actually carrying outputs forward + external inputs. { edges[], external_inputs[] }."
+        },
+        "quantitative": {
+          "type": "array",
+          "description": "Quantitative synthesis rows pulled across studies. Each: { metric, value, unit, study, context }.",
+          "items": {"type": "object", "additionalProperties": true}
+        },
+        "roadmap": {
+          "type": "array",
+          "description": "Prioritized next-studies roadmap. Each: { priority (P0|P1|P2), item, basis, acceptance, source }.",
+          "items": {"type": "object", "additionalProperties": true}
+        },
+        "figures_ranked": {
+          "type": "array",
+          "description": "Hand-picked key figures (overrides the automatic best-per-study ranking). Each: { study, figure, caption }.",
+          "items": {"type": "object", "additionalProperties": true}
+        },
+        "studies_index": {
+          "type": "array",
+          "description": "Per-study inventory rows (run status × evidence grade). Each: { slug, title, run_status (ran|planned), grade (supported|qualified|refuted|pending) }.",
+          "items": {"type": "object", "additionalProperties": true}
+        }
+      }
     }
   }
 }
