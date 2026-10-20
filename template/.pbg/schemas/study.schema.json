@@ -601,6 +601,22 @@
       "description": "Cross-cutting field paired with section 4 (Build). Short biological context — assumption strings. Long-form lit review belongs in references/notes/<bib-key>.md, not here.",
       "items": {"type": "string"}
     },
+    "contract": {
+      "type": "object",
+      "additionalProperties": true,
+      "description": "Section 5b: the study's declared interface contract — the typed input/output port face it expects of the composite it runs. The study-audit reconciles this against the composite's resolved process-contract face (contract_spine.contract_face_diff), and readout_validation checks readouts against it. Optional and additive; studies without it still validate.",
+      "properties": {
+        "face": {
+          "type": "object",
+          "additionalProperties": false,
+          "description": "Typed port face. inputs/outputs each map a port name to a bigraph port-type (_type required; _units/_min/_max optional, typed when present).",
+          "properties": {
+            "inputs": {"$ref": "#/$defs/portFace"},
+            "outputs": {"$ref": "#/$defs/portFace"}
+          }
+        }
+      }
+    },
     "readouts": {
       "type": "array",
       "description": "Section 5 of the canonical 8-section structure. Replaces v3 observables. Each readout declares what is collected from a simulation run and from where, plus its availability status. Canonical new studies use index_by + optional aggregate; older studies may use identifier or store_path (both tolerated via additionalProperties:true).",
@@ -1254,6 +1270,23 @@
         },
         {"type": "object", "additionalProperties": true}
       ]
+    }
+  },
+  "$defs": {
+    "portFace": {
+      "type": "object",
+      "description": "A set of named ports, each mapping a port name to a bigraph port-type. Used by study contract.face inputs/outputs.",
+      "additionalProperties": {
+        "type": "object",
+        "additionalProperties": true,
+        "required": ["_type"],
+        "properties": {
+          "_type": {"type": "string", "description": "Bigraph type of the port, e.g. 'float' or 'quantity[float,fg]'."},
+          "_units": {"type": "string", "description": "Pint unit string, e.g. 'kelvin', 'molar', 'meter/second'."},
+          "_min": {"type": "number"},
+          "_max": {"type": "number"}
+        }
+      }
     }
   }
 }
