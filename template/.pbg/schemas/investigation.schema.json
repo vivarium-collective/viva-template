@@ -8,8 +8,8 @@
   "properties": {
     "schema_version": {
       "type": "integer",
-      "enum": [1, 2],
-      "description": "1 = legacy v1 (bare name/title/question/hypothesis/description/studies/acceptance_criteria). 2 = current (narrative-spine fields populated). New scaffolds emit 2."
+      "enum": [1, 2, 3],
+      "description": "1 = legacy v1 (bare name/title/question/hypothesis/description/studies/acceptance_criteria). 2 = current (narrative-spine fields populated). 3 = adds the additive `knowledge` block (derived Concept + canonical-Verdict store). New scaffolds emit 2; a spec is version 3 once a `knowledge` block is authored/persisted. Old readers ignore `knowledge` and still validate."
     },
     "name": {
       "type": "string",
@@ -262,6 +262,61 @@
           "type": "array",
           "description": "Per-study inventory rows (run status × evidence grade). Each: { slug, title, run_status (ran|planned), grade (supported|qualified|refuted|pending) }.",
           "items": {"type": "object", "additionalProperties": true}
+        }
+      }
+    },
+    "knowledge": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Section K (schema v3, additive): the Concept + canonical-Verdict knowledge store for this investigation — a process-bigraph `node`-typed sub-tree, persisted here as an additive block. Derived-first: a read-only pass projects it from canonical membership (`studies[]`), each study's DAG edges, and findings; an authored half may later be merged over the derived projection (authored wins, derived fills, empty never clobbers). Old readers ignore this block. The Progress and Verdict axes are kept INDEPENDENT: operation/execution success never sets a scientific verdict.",
+      "properties": {
+        "concepts": {
+          "type": "object",
+          "description": "Concepts keyed by stable concept_id. A Concept is a persistent, revisable synthesis-grouping over member Studies (many-to-many); it does not own or replace the Studies' immutable evidence.",
+          "additionalProperties": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["question"],
+            "properties": {
+              "question": {"type": "string", "description": "The unifying subquestion/theme this Concept groups Studies under."},
+              "study_refs": {"type": "array", "items": {"type": "string", "pattern": "^[a-z0-9][a-z0-9_-]*$"}, "uniqueItems": true, "description": "Member study slugs (references, never copies)."},
+              "synthesis": {"type": ["string", "null"], "description": "Authored evidence-grounded synthesis; null/absent when only derived. An empty value never clobbers an authored one."},
+              "org_state": {"enum": ["exploring", "consolidated", "reopened"], "description": "Concept lifecycle (organizational, not execution)."},
+              "derived": {"type": "boolean", "description": "true when this Concept is a projection; false when authored/persisted."},
+              "revisions": {
+                "type": "array",
+                "description": "Append-only revision log; prior groupings/syntheses remain recoverable.",
+                "items": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "ts": {"type": "string"},
+                    "op": {"type": "string", "description": "The inquiry op that produced this revision (e.g. consolidate, split, reopen, assess, narrate)."},
+                    "by": {"type": "string"},
+                    "summary": {"type": "string"},
+                    "prior_members": {"type": "array", "items": {"type": "string"}},
+                    "prior_synthesis": {"type": ["string", "null"]}
+                  }
+                }
+              }
+            }
+          }
+        },
+        "verdicts": {
+          "type": "object",
+          "description": "Per-study canonical verdict records keyed by study slug. The two axes are independent.",
+          "additionalProperties": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "progress": {"enum": ["proposed", "planned", "running", "completed", "failed"], "description": "Execution/workflow axis, projected from the study's execution_status. Never feeds `verdict`."},
+              "verdict": {"enum": ["unassessed", "supported", "qualified", "inconclusive", "refuted"], "description": "Canonical scientific-verdict axis on the tested proposition. `unassessed` is the explicit no-verdict value (study.yaml uses null for the same state). A completed study may be refuted; a failed execution is not a refuted hypothesis."},
+              "verdict_source": {"enum": ["authored", "derived"], "description": "Whether the verdict was authored in study.yaml or derived from findings."},
+              "rationale": {"type": "string", "description": "Short justification citing the evidence."},
+              "evidence_refs": {"type": "array", "items": {"type": "string"}, "description": "Finding ids the verdict cites."},
+              "diverges": {"type": "boolean", "description": "true when an authored study verdict and the derived verdict disagree."}
+            }
+          }
         }
       }
     }
