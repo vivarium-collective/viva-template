@@ -828,6 +828,7 @@
                     "enum": [
                       "builds-on",
                       "tests",
+                      "refutes",
                       "motivates",
                       "alternative-to",
                       null
@@ -887,37 +888,24 @@
                         ]
                       }
                     }
+                  },
+                  "provides": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "description": "Prose description of the state this parent provides downstream (from the former upstream_state_consumed[].provides)."
+                  },
+                  "rationale": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "description": "Why this relation holds (from the former parent_relations[].rationale)."
                   }
                 }
               }
-            ],
-            "type": "object",
-            "properties": {
-              "study": {
-                "type": "string"
-              },
-              "condition": {
-                "type": [
-                  "string",
-                  "null"
-                ],
-                "description": "Gate condition (organizational)."
-              },
-              "relation": {
-                "type": [
-                  "string",
-                  "null"
-                ],
-                "description": "Epistemic relation: builds-on/tests/refutes/motivates/alternative-to."
-              },
-              "provides": {
-                "type": [
-                  "string",
-                  "null"
-                ],
-                "description": "State this parent provides downstream (computational); == outputs_used."
-              }
-            }
+            ]
           }
         },
         "enables": {
