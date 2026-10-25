@@ -613,7 +613,7 @@
     },
     "parent_studies": {
       "type": "array",
-      "description": "Studies that must reach a given condition before this one runs. Each item is either a bare slug string (legacy form; normalized to {study: <slug>, condition: tests-passed}) or an object {study, condition: tests-passed | ran | complete}. Read by the dashboard's /api/investigations to compute `blocked` + `blocked_by` per study and to topologically sort the Studies tab.",
+      "description": "Unified typed relations to parent studies (RFC-0006 Tier 2): each entry carries the organizational gate (condition), the epistemic relation, and/or the computational provides. Absorbs parent_relations / builds_on / upstream_state_consumed.",
       "items": {
         "oneOf": [
           {
@@ -660,7 +660,47 @@
             },
             "additionalProperties": false
           }
-        ]
+        ],
+        "type": "object",
+        "properties": {
+          "study": {
+            "type": "string",
+            "description": "Parent study slug."
+          },
+          "condition": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Gate condition (organizational), e.g. tests-passed / ran."
+          },
+          "relation": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Scientific (epistemic) relation: builds-on/tests/refutes/motivates/alternative-to."
+          },
+          "rationale": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "provides": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "State this parent provides downstream (computational)."
+          },
+          "artifact": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        }
       }
     },
     "parent_relations": {
@@ -694,7 +734,9 @@
             "description": "Optional one-line reason for the edge (e.g. 'uses carbon-fixation fluxes as inputs to the metabolic network'). Shown on edge hover."
           }
         }
-      }
+      },
+      "deprecated": true,
+      "x-replaced-by": "parent_studies"
     },
     "expected_behavior": {
       "type": "array",
@@ -2096,6 +2138,24 @@
           "additionalProperties": true
         }
       ]
+    },
+    "builds_on": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "deprecated": true,
+      "x-replaced-by": "parent_studies",
+      "description": "Deprecated lineage list; fold into parent_studies[].relation=builds-on."
+    },
+    "upstream_state_consumed": {
+      "type": "array",
+      "items": {
+        "type": "object"
+      },
+      "deprecated": true,
+      "x-replaced-by": "parent_studies",
+      "description": "Deprecated dataflow list; fold into parent_studies[].provides."
     }
   },
   "$defs": {
