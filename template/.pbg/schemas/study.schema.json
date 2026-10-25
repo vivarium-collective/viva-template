@@ -182,7 +182,9 @@
         "planned",
         null
       ],
-      "description": "Multi-axis status (Pass A). The pipeline-gate verdict — drives downstream unblocking. When set, the dashboard renders this as the headline status pill. Independent of all other axes. Optional."
+      "description": "Multi-axis status (Pass A). The pipeline-gate verdict — drives downstream unblocking. When set, the dashboard renders this as the headline status pill. Independent of all other axes. Optional. Deprecated (RFC-0006 Tier 3): a projection of the canonical verdict + runs; the DAG gate reads run outcomes / execution_status, not this field.",
+      "deprecated": true,
+      "x-replaced-by": "verdict"
     },
     "expert_review_status": {
       "deprecated": true,
