@@ -701,7 +701,9 @@
             ]
           }
         }
-      }
+      },
+      "deprecated": true,
+      "x-replaced-by": "pipeline_gate.prerequisites"
     },
     "parent_relations": {
       "type": "array",
@@ -736,7 +738,7 @@
         }
       },
       "deprecated": true,
-      "x-replaced-by": "parent_studies"
+      "x-replaced-by": "pipeline_gate.prerequisites"
     },
     "expected_behavior": {
       "type": "array",
@@ -886,7 +888,34 @@
                   }
                 }
               }
-            ]
+            ],
+            "type": "object",
+            "properties": {
+              "study": {
+                "type": "string"
+              },
+              "condition": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "description": "Gate condition (organizational)."
+              },
+              "relation": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "description": "Epistemic relation: builds-on/tests/refutes/motivates/alternative-to."
+              },
+              "provides": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "description": "State this parent provides downstream (computational); == outputs_used."
+              }
+            }
           }
         },
         "enables": {
@@ -2145,7 +2174,7 @@
         "type": "string"
       },
       "deprecated": true,
-      "x-replaced-by": "parent_studies",
+      "x-replaced-by": "pipeline_gate.prerequisites",
       "description": "Deprecated lineage list; fold into parent_studies[].relation=builds-on."
     },
     "upstream_state_consumed": {
@@ -2154,7 +2183,7 @@
         "type": "object"
       },
       "deprecated": true,
-      "x-replaced-by": "parent_studies",
+      "x-replaced-by": "pipeline_gate.prerequisites",
       "description": "Deprecated dataflow list; fold into parent_studies[].provides."
     }
   },
