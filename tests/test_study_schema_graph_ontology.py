@@ -150,8 +150,12 @@ def test_prerequisite_relation_accepts_canonical(validator, rel):
 
 
 def test_prerequisite_relation_rejects_invalid(validator):
+    # `refutes` is now a CANONICAL prerequisite relation (RFC-0006 unified the
+    # gate dependency with its epistemic facet; e.g. a study that builds on an
+    # upstream result while refuting its claim), so an off-vocabulary value is
+    # the genuine invalid case.
     spec = _minimal_study(
-        pipeline_gate={"prerequisites": [{"study": "og-00-baseline", "relation": "refutes"}]}
+        pipeline_gate={"prerequisites": [{"study": "og-00-baseline", "relation": "requires"}]}
     )
     with pytest.raises(jsonschema.ValidationError):
         validator.validate(spec)
