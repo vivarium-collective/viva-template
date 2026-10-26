@@ -24,6 +24,28 @@ PLUGIN_VERSION="0.4.16"
 # viva- workspaces use the viva_ package prefix (matches the repo/ecosystem name).
 PACKAGE_PATH="viva_${WS_NAME//-/_}"
 
+# CI Python version — derived from the workspace's own requires-python rather
+# than hardcoded, so a 3.12-only workspace tests (and passes the fresh-vs-
+# template drift guard) on 3.12 instead of a wrong-for-it 3.11. Prefer an
+# already-rendered pyproject.toml (a re-scaffold of an existing workspace),
+# else the template's pyproject.toml.j2. Minimal lower-bound parse: grab the
+# first `3.N` in requires-python; N>=12 -> "3.12", otherwise "3.11".
+PYTHON_VERSION="3.11"
+PYPROJECT_SRC=""
+if [ -f pyproject.toml ]; then
+  PYPROJECT_SRC="pyproject.toml"
+elif [ -f pyproject.toml.j2 ]; then
+  PYPROJECT_SRC="pyproject.toml.j2"
+fi
+if [ -n "$PYPROJECT_SRC" ]; then
+  REQ_PY_MINOR="$(grep -E '^[[:space:]]*requires-python[[:space:]]*=' "$PYPROJECT_SRC" \
+    | head -n1 | grep -oE '3\.[0-9]+' | head -n1 | cut -d. -f2)"
+  if [ -n "$REQ_PY_MINOR" ] && [ "$REQ_PY_MINOR" -ge 12 ] 2>/dev/null; then
+    PYTHON_VERSION="3.12"
+  fi
+fi
+echo "CI python-version: $PYTHON_VERSION (from ${PYPROJECT_SRC:-default})"
+
 # Render every .j2 file in the workspace root (skip scripts/ — those are
 # runtime Jinja2 templates for the dashboard renderer, not init-time files)
 find . -name '*.j2' -type f -not -path './.git/*' -not -path './scripts/*' | while read -r tpl; do
@@ -33,6 +55,7 @@ find . -name '*.j2' -type f -not -path './.git/*' -not -path './scripts/*' | whi
     -e "s/{{ *package_path *}}/$PACKAGE_PATH/g" \
     -e "s/{{ *today *}}/$TODAY/g" \
     -e "s/{{ *plugin_version *}}/$PLUGIN_VERSION/g" \
+    -e "s/{{ *python_version *}}/$PYTHON_VERSION/g" \
     -e "s/{{ *generated_at *}}/$TODAY/g" \
     "$tpl" > "$out"
   rm "$tpl"
