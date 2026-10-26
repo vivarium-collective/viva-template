@@ -437,7 +437,10 @@ def main() -> None:
             import sqlite3
             conn = sqlite3.connect(str(runs_db))
             try:
-                cur = conn.execute("SELECT status FROM runs")
+                # vivarium-workbench writes the per-study run metadata to the
+                # `runs_meta` table (see composite_runs.py), not `runs` — the
+                # old name made this always report "0 completed runs" (#84).
+                cur = conn.execute("SELECT status FROM runs_meta")
                 for (row_status,) in cur.fetchall():
                     if row_status in ("running", "pending"):
                         n_active_runs += 1
