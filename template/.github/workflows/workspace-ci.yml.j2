@@ -143,6 +143,22 @@ jobs:
           else
             echo "vivarium-workbench gen-readme unavailable (older pin) — skipping README freshness check."
           fi
+      - name: Require README read-only workbench link (blocking)
+        run: |
+          # gen-readme fills a prominent link to the published read-only workbench
+          # (URL derived from the git remote). A workspace that is on GitHub but
+          # whose README has NO such link means `gen-readme` was never run after the
+          # remote was linked — a one-time, reader-facing miss (distinct from the
+          # cosmetic table drift above, which stays a non-blocking warning).
+          # This is the single BLOCKING README check: it fails until the workbench
+          # link exists, so no workspace ships without it. Refresh with:
+          #   vivarium-workbench gen-readme --workspace .
+          if grep -qiE 'github\.io/.+/(workbench|dashboard)/' README.md; then
+            echo "read-only workbench link present."
+          else
+            echo "::error title=Missing read-only workbench link::README has no published read-only workbench link. Run 'vivarium-workbench gen-readme --workspace .' (after the GitHub remote is linked) and commit the result."
+            exit 1
+          fi
       - name: Check generated workflows are fresh vs viva-template
         run: |
           # Every workflow scaffolded from viva-template carries a provenance
