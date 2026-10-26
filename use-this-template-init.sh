@@ -29,6 +29,8 @@ shopt -u dotglob
 rmdir template
 
 # Hand off to the workspace render script (which now lives at repo root
-# after flattening) and remove ourselves.
+# after flattening) and remove ourselves. template-init.sh does all the .j2
+# substitution, including deriving the CI python-version from the workspace's
+# requires-python, so this path gets it too.
 bash template-init.sh
 rm -f use-this-template-init.sh
