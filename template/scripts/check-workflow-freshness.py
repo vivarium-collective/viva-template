@@ -42,12 +42,24 @@ Three modes:
   from the stamped hash — i.e. the workspace has drifted from the template it
   was generated from.
 
+* ``--write`` (run in a scaffolded workspace): the SYNC / fix mode. Regenerate
+  every STALE stamped workflow from the current upstream template, re-render it
+  (deriving python-version from the workspace's requires-python) and re-stamp to
+  the current hash. This is the centralized fix for the fan-out drift — run it
+  instead of hand-copying files from viva-template.
+
+Intentional forks: a workspace that must keep a workflow different from the
+template (e.g. a per-repo rebrand) adds a ``# divergence: <reason>`` line inside
+that file's provenance block. ``--check`` then reports it as intentionally
+diverged instead of failing, and ``--write`` leaves it untouched.
+
 Stdlib only; no third-party imports so it runs in a bare CI step.
 """
 from __future__ import annotations
 
 import argparse
 import hashlib
+import re
 import sys
 import urllib.error
 import urllib.request
@@ -134,7 +146,7 @@ def parse_stamp(text: str) -> dict | None:
             if ":" in content:
                 key, _, value = content.partition(":")
                 key = key.strip()
-                if key in {"template", "sha256"}:
+                if key in {"template", "sha256", "divergence"}:
                     fields[key] = value.strip()
     if "template" in fields and "sha256" in fields:
         return fields
@@ -257,6 +269,7 @@ def mode_check_workspace(workflows_dir: Path, repo: str, ref: str,
                          template_dir: Path | None) -> int:
     """Workspace drift check: stamped hash vs CURRENT upstream template hash."""
     drifted: list[str] = []
+    diverged: list[str] = []
     unresolved: list[str] = []
     checked = 0
     stamped_any = False
@@ -268,6 +281,11 @@ def mode_check_workspace(workflows_dir: Path, repo: str, ref: str,
             # repo-specific workflow the workspace added). Skip it silently.
             continue
         stamped_any = True
+        if stamp.get("divergence"):
+            # Intentionally forked from the template (e.g. a workspace-specific
+            # rebrand). Reported, never failed, never auto-synced.
+            diverged.append(f"{path.name} (diverged: {stamp['divergence']})")
+            continue
         template_name = stamp["template"]
         upstream = fetch_upstream_template(template_name, repo, ref, template_dir)
         if upstream is None:
@@ -284,6 +302,11 @@ def mode_check_workspace(workflows_dir: Path, repo: str, ref: str,
     source = f"{template_dir}" if template_dir else f"{repo}@{ref}"
     print(f"checked {checked} stamped workflow(s) against {source}")
 
+    if diverged:
+        print("\nIntentionally diverged workflows (declared; not checked for drift):")
+        for item in diverged:
+            print(f"  - {item}")
+
     if unresolved:
         # Could not reach upstream — warn but do NOT fail (network flake or an
         # older pin). Mirrors the gen-readme step's availability guard.
@@ -299,15 +322,95 @@ def mode_check_workspace(workflows_dir: Path, repo: str, ref: str,
               f"{repo}@{ref}:", file=sys.stderr)
         for msg in drifted:
             print(f"  - {msg}", file=sys.stderr)
-        print("\nRegenerate them by re-scaffolding from viva-template, or copy "
-              "the current source from\n"
-              f"  {repo}/{UPSTREAM_WORKFLOWS_SUBPATH}/", file=sys.stderr)
+        print("\nFix them in place with:\n"
+              "  python scripts/check-workflow-freshness.py --write\n"
+              "(regenerates each stale workflow from the current template and re-stamps; "
+              "mark an intentional fork with a '# divergence: <reason>' line in its stamp "
+              "to keep it and silence this guard for that file.)", file=sys.stderr)
         return 1
 
     if not stamped_any:
         print("no viva-template-stamped workflows found — nothing to check")
         return 0
     print("generated workflows are fresh relative to viva-template")
+    return 0
+
+
+# ---------------------------------------------------------------------------
+# Sync mode (the centralized fix): regenerate stale workflows from the template
+# ---------------------------------------------------------------------------
+
+def _output_name(template_name: str) -> str:
+    """Workspace filename for a template source (``*.yml.j2`` -> ``*.yml``)."""
+    return template_name[:-3] if template_name.endswith(".j2") else template_name
+
+
+def _derive_python_version(workflows_dir: Path) -> str:
+    """CI python-version from the workspace's requires-python (mirrors template-init.sh:
+    the first ``3.N`` in requires-python; N>=12 -> 3.12, else 3.11)."""
+    pyproject = workflows_dir.parent.parent / "pyproject.toml"
+    if pyproject.is_file():
+        for line in pyproject.read_text(encoding="utf-8").splitlines():
+            if re.match(r"\s*requires-python\s*=", line):
+                m = re.search(r"3\.(\d+)", line)
+                return "3.12" if (m and int(m.group(1)) >= 12) else "3.11"
+    return "3.11"
+
+
+def _render_workflow(body: str, workflows_dir: Path) -> str:
+    """Render a template workflow body for this workspace. Workflow templates are
+    substitution-light; the only historically per-workspace variable is ``python_version``
+    (now usually hard-set upstream). Mirrors template-init.sh's substitution for forward-compat."""
+    pv = _derive_python_version(workflows_dir)
+    return body.replace("{{ python_version }}", pv).replace("{{python_version}}", pv)
+
+
+def mode_sync_workspace(workflows_dir: Path, repo: str, ref: str,
+                        template_dir: Path | None, write: bool) -> int:
+    """Regenerate STALE stamped workflows from the current upstream template and re-stamp
+    to the current hash. Intentionally-diverged workflows (a ``# template-divergence:`` line
+    in the stamp) are left untouched. This is the centralized fix for the fan-out drift:
+    run it in any workspace instead of hand-copying files."""
+    synced: list[str] = []
+    skipped_div: list[str] = []
+    unresolved: list[str] = []
+    up_to_date = 0
+    for path in _iter_workflow_files(workflows_dir):
+        text = path.read_text(encoding="utf-8")
+        stamp = parse_stamp(text)
+        if stamp is None:
+            continue
+        if stamp.get("divergence"):
+            skipped_div.append(f"{path.name} (diverged: {stamp['divergence']})")
+            continue
+        template_name = stamp["template"]
+        upstream = fetch_upstream_template(template_name, repo, ref, template_dir)
+        if upstream is None:
+            unresolved.append(f"{path.name} (template {template_name})")
+            continue
+        upstream_hash = canonical_hash(upstream)
+        if stamp["sha256"] == upstream_hash:
+            up_to_date += 1
+            continue
+        out_path = workflows_dir / _output_name(template_name)
+        body = _render_workflow(strip_provenance_block(upstream).lstrip("\n"), workflows_dir)
+        new_text = render_stamp(template_name, upstream_hash) + "\n" + body
+        if write:
+            out_path.write_text(new_text, encoding="utf-8")
+        synced.append(f"{out_path.name} <- {template_name}@{upstream_hash[:12]}")
+
+    verb = "synced" if write else "WOULD sync"
+    extra = f"; {len(skipped_div)} intentionally diverged" if skipped_div else ""
+    print(f"{verb} {len(synced)} stale workflow(s); {up_to_date} already fresh{extra}")
+    for s in synced:
+        print(f"  {verb}: {s}")
+    for d in skipped_div:
+        print(f"  kept (diverged): {d}")
+    if unresolved:
+        print("\nWARNING: could not retrieve upstream template for:", file=sys.stderr)
+        for item in unresolved:
+            print(f"  - {item}", file=sys.stderr)
+        return 1 if write else 0
     return 0
 
 
@@ -341,6 +444,10 @@ def main(argv: list[str] | None = None) -> int:
                         help="(re)write template workflow provenance stamps.")
     parser.add_argument("--check", action="store_true",
                         help="workspace drift check (default when no mode given).")
+    parser.add_argument("--write", action="store_true",
+                        help="SYNC: regenerate stale workspace workflows from the current "
+                             "upstream template and re-stamp (the centralized fix). Skips "
+                             "workflows marked '# template-divergence:'.")
     parser.add_argument("--workflows-dir", type=Path, default=None,
                         help="directory of workflow files (auto-detected).")
     parser.add_argument("--repo", default=DEFAULT_REPO,
@@ -362,6 +469,9 @@ def main(argv: list[str] | None = None) -> int:
         return mode_update(workflows_dir)
     if args.check_templates:
         return mode_check_templates(workflows_dir)
+    if args.write:
+        return mode_sync_workspace(workflows_dir, args.repo, args.ref,
+                                   args.template_dir, write=True)
     return mode_check_workspace(workflows_dir, args.repo, args.ref,
                                 args.template_dir)
 
