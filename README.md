@@ -124,6 +124,87 @@ into every scaffolded workspace:
 Schemas are pinned at scaffold time. `/viva-workspace` overwrites them with the
 plugin's current version; standalone users get whatever was last synced here.
 
+## Keeping scaffolded workflows in sync (workflow auto-sync)
+
+Every workspace is scaffolded with the GitHub Actions workflows under
+`template/.github/workflows/` (`workspace-ci.yml`, `publish-dashboard.yml`,
+`publish-reports.yml`, `build-and-push.yml`). Each generated copy carries a
+**provenance stamp** — a `# >>> viva-template-provenance >>>` header with the
+sha256 of the source template's canonical content. When a template changes here,
+the generated copies become STALE and the workspace's own CI step *"Check
+generated workflows are fresh vs viva-template"* fails. Three pieces keep the
+fan-out in sync:
+
+| Tool | Scope | What it does |
+|---|---|---|
+| `template/scripts/check-workflow-freshness.py` | one workspace (in its CI) | `--check` fails the build on drift; `--write` regenerates that workspace's own workflows from the current template (but does **not** preserve repo-local steps). |
+| `scripts/report-workflow-drift.py` + `.github/workflows/workflow-drift-report.yml` | whole org | weekly **report** of which workspaces are stale. Read-only. |
+| `scripts/sync-workspace-workflows.py` + `.github/workflows/workflow-sync.yml` | whole org | the **fix**: regenerates every drifted workspace's workflows from the current templates, **preserves repo-local customizations**, and opens a PR per repo. |
+
+### `sync-workspace-workflows.py`
+
+```bash
+# report what WOULD change across the org (default; changes nothing):
+python scripts/sync-workspace-workflows.py --all --dry-run
+
+# one repo:
+python scripts/sync-workspace-workflows.py --repo viva-lammps --dry-run
+
+# open a chore/sync-workflows PR per drifted repo (needs a cross-repo token):
+python scripts/sync-workspace-workflows.py --all --open-pr
+```
+
+Each drifted workflow is classified **stamp-only** (the template body is
+unchanged; only the stamp drifted — safe) vs **content** (real template logic
+changed — a human should review). This classification drives any future
+auto-merge policy: stamp-only syncs are mechanical, content syncs are not.
+
+### Preserving repo-local customizations
+
+Many workspaces add a simulator **system-dependency** step to `workspace-ci.yml`
+— e.g. `sudo apt-get install -y libmpich12` (viva-lammps, viva-capsule) or
+`libnetcdf-dev` (viva-mem3dg). A naive "regenerate from template" would delete
+these and break the build. The sync never does that:
+
+- Steps a workspace wants kept live between the sanctioned markers, which the
+  sync carries over verbatim on every regenerate:
+
+  ```yaml
+      # >>> workspace-local >>>
+      - name: Install MPICH runtime
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq libmpich12
+      # <<< workspace-local <<<
+  ```
+
+- Workspaces that predate the marker convention need no manual migration: the
+  sync **auto-detects** any step not present in the template (by its
+  `name:`/`uses:`/first run-line), with special attention to system-dep steps
+  (`apt-get`/`brew`/`yum`/`dnf`/`apk`), folds it into the sanctioned block, and
+  reports every preserved step. The spliced block is purely additive and never
+  trips the freshness guard (which compares the *stamp*, not the body).
+
+An intentional, permanent fork of a workflow is declared with a
+`# divergence: <reason>` line inside its provenance stamp (supported by
+`check-workflow-freshness.py`); the sync leaves such files untouched.
+
+### Required secret: `ORG_SYNC_TOKEN`
+
+`workflow-sync.yml` opens PRs in **other** repositories. The default
+`GITHUB_TOKEN` is scoped to this repo only — it can read other repos but
+**cannot** push a branch or open a PR in them. So the `--open-pr` path needs a
+cross-repo **Personal Access Token** supplied as the `ORG_SYNC_TOKEN` secret
+(an org-level Actions secret shared to this repo, or a repo secret here):
+
+- **Fine-grained PAT** — org `vivarium-collective`, Repository access = all (or
+  the workspace repos), Permissions: **Contents: Read and write**,
+  **Pull requests: Read and write**, **Metadata: Read-only**.
+- **or a classic PAT** with the `repo` scope.
+
+Add it under *Settings → Secrets and variables → Actions → New repository/org
+secret*, named exactly `ORG_SYNC_TOKEN`. No token is ever hardcoded; the
+workflow passes it to `gh` via `GH_TOKEN`. Until it is configured, the scheduled
+run automatically **degrades to `--dry-run`** (report only) instead of failing.
+
 ## Companion repos
 
 - **[viva-superpowers](https://github.com/vivarium-collective/viva-superpowers)** — the Claude Code plugin that wraps this template with scaffolding + Studies + Visualizations skills. Use it for the AI-assisted authoring flow.
