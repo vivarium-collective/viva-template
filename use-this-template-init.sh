@@ -17,9 +17,13 @@ if [[ ! -d template ]]; then
   exit 1
 fi
 
-# Remove viva-template's own dev infra. We are not viva-template; we are a
-# new workspace created from it.
-rm -rf docs/superpowers .superpowers tests README.md
+# Remove viva-template's own dev infra AND every top-level entry that template/
+# ships its own copy of. Otherwise `mv template/* .` below tries to move a
+# directory onto an existing same-named, non-empty directory (.claude, .github,
+# docs, scripts) — which `mv` refuses ("cannot overwrite ...: Directory not
+# empty"), aborting the whole script under `set -e`. We are not viva-template;
+# we are a new workspace created from it.
+rm -rf docs/superpowers .superpowers tests README.md .claude .github docs scripts
 
 # Flatten template/* into repo root. Use shopt -s dotglob so .claude,
 # .github, .pbg also move.
