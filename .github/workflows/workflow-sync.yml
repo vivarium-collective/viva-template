@@ -1,0 +1,94 @@
+name: workflow-sync
+
+# Org-wide AUTO-SYNC of scaffolded GitHub Actions workflows to viva-template.
+#
+# The companion to workflow-drift-report.yml: that job only REPORTS which
+# workspaces run stale generated workflows; THIS job FIXES them. It runs
+# scripts/sync-workspace-workflows.py, which for every org workspace repo with a
+# stamped workspace-ci.yml:
+#   1. regenerates each drifted workflow from viva-template's CURRENT templates
+#      (correct content + current provenance stamp, so the workspace's
+#      "Check generated workflows are fresh vs viva-template" CI step passes),
+#   2. PRESERVES repo-local customizations (simulator system-dep steps such as
+#      `apt-get install libmpich12` / `libnetcdf-dev`) by carrying them into a
+#      sanctioned `# >>> workspace-local >>>` block, and
+#   3. opens a `chore/sync-workflows` PR per repo (never merges — a human does).
+#
+# ===========================================================================
+# REQUIRED SECRET: ORG_SYNC_TOKEN
+# ===========================================================================
+# This workflow opens PRs in OTHER repositories. The default `GITHUB_TOKEN` is
+# scoped to THIS repo only — it can read other public repos but CANNOT create a
+# branch or a PR in them. So a cross-repo Personal Access Token must be supplied
+# as the `ORG_SYNC_TOKEN` secret (org-level secret shared to this repo, or a
+# repo secret on viva-template):
+#
+#   - Fine-grained PAT: org = vivarium-collective, Repository access = All repos
+#     (or the workspace repos), Permissions:
+#         Contents:      Read and write   (push the chore/sync-workflows branch)
+#         Pull requests: Read and write   (open the PR)
+#         Metadata:      Read-only        (enumerate repos)
+#   - or a classic PAT with the `repo` scope.
+#
+# Add it under: Settings -> Secrets and variables -> Actions -> New secret
+#   Name:  ORG_SYNC_TOKEN
+# Do NOT hardcode a token anywhere; the script reads it only via gh's GH_TOKEN.
+#
+# Until ORG_SYNC_TOKEN is configured, the scheduled run falls back to a DRY-RUN
+# (report only, no PRs) so the job never fails for a missing secret.
+
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: "dry-run (report only) or open-pr (open sync PRs)"
+        type: choice
+        options: [dry-run, open-pr]
+        default: dry-run
+      org:
+        description: "GitHub org to sync"
+        default: "vivarium-collective"
+        required: false
+  schedule:
+    # Mondays 08:00 UTC — one hour after workflow-drift-report's scan, so the
+    # weekly report and the weekly fix line up.
+    - cron: "0 8 * * 1"
+
+# Only read access is needed for THIS repo's checkout; all cross-repo writes go
+# through ORG_SYNC_TOKEN, not GITHUB_TOKEN.
+permissions:
+  contents: read
+
+concurrency:
+  group: workflow-sync
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Sync scaffolded workflows across the org
+        env:
+          # gh authenticates from GH_TOKEN. Prefer the cross-repo PAT; if it is
+          # not set, fall back to the (read-only, same-repo) GITHUB_TOKEN, which
+          # forces dry-run below.
+          GH_TOKEN: ${{ secrets.ORG_SYNC_TOKEN || secrets.GITHUB_TOKEN }}
+          REQUESTED_MODE: ${{ github.event.inputs.mode || 'open-pr' }}
+          ORG: ${{ github.event.inputs.org || 'vivarium-collective' }}
+          HAS_SYNC_TOKEN: ${{ secrets.ORG_SYNC_TOKEN != '' }}
+        run: |
+          set -euo pipefail
+          # open-pr needs the cross-repo PAT; without it, degrade to dry-run so
+          # the job reports instead of failing to push/PR with GITHUB_TOKEN.
+          MODE="$REQUESTED_MODE"
+          if [ "$MODE" = "open-pr" ] && [ "$HAS_SYNC_TOKEN" != "true" ]; then
+            echo "::warning title=ORG_SYNC_TOKEN not set::Falling back to --dry-run. Add an ORG_SYNC_TOKEN PAT (contents:write + pull_requests:write across the org) to let this workflow open sync PRs."
+            MODE="dry-run"
+          fi
+          echo "Running sync in '$MODE' mode against org '$ORG'."
+          python scripts/sync-workspace-workflows.py --all --org "$ORG" "--$MODE"
