@@ -1943,8 +1943,19 @@
             "type": "object",
             "additionalProperties": true
           }
+        },
+        "environment_ref": {
+          "type": "string",
+          "description": "Name of the environment (declared in the workspace's environments.yaml) this condition's runs must execute in, for reproducibility. At launch the run captures its actual environment and verifies it against this declaration, recording any drift on the run manifest. Per-condition; falls back to the study-level `environment_ref` when absent. Distinct from `environment` (the dual-engine {repo, ref} comparison coordinate)."
         }
       }
+    },
+    "environment_ref": {
+      "type": "string",
+      "description": "Study-level default naming the environment (declared in the workspace's environments.yaml) this study's runs execute in, for reproducibility. Applied to every condition unless that condition sets its own `environment_ref`. At launch the run captures its actual environment and verifies it against the declaration, recording drift. Distinct from the dual-engine `environment` {repo, ref} comparison coordinate.",
+      "examples": [
+        "pulse"
+      ]
     },
     "report": {
       "type": "object",
