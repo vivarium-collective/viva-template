@@ -17,6 +17,7 @@ bash scripts/serve.sh   # opens browser at http://localhost:<port>
 - [ ] Install workspace deps: `uv pip install -e ".[dev]"`
 - [ ] Lint: `python3 scripts/lint-workspace.py` should print `workspace lint: OK`
 - [ ] Commit + (eventually) push: `git init && git add -A && git commit -m "feat: workspace bootstrap"`
+- [ ] **After the GitHub remote is linked** (`gh repo create …` / `git remote add origin …`): run `vivarium-workbench gen-readme --workspace .` and commit. This fills the README's prominent **read-only workbench link** + badges from the remote URL. CI's `Require README read-only workbench link (blocking)` step fails until this is done, so don't skip it.
 
 > **If `uv pip install` fails with "vivarium-workbench was not found in
 > the package registry":** vivarium-workbench isn't on PyPI yet. The
