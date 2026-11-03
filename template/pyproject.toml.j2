@@ -7,7 +7,10 @@ requires-python = ">=3.12"
 # processes, so `pip install <workspace>` stays lean: a backend that installs the
 # package into its own environment (an HPC runner, compose-api, sms-api's
 # extra_pip_deps) gets no dashboard stack. The dashboard is the `dashboard` extra
-# below; the container image and `.[dev]` install it.
+# below; the container image and `.[dev]` install it. A process module that
+# imports anything else (numpy, matplotlib, ...) must list it here: `build_core()`
+# skips a module that fails to import, so a backend without it would silently
+# lose that module's processes.
 dependencies = [
     # Floor: 1.8.5 ships the composite `core_extensions` mechanism (1.8.0) the
     # dashboard relies on AND the emitter fix (#217) + `requests`/`fire` server
