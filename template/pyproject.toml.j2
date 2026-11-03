@@ -3,6 +3,11 @@ name = "{{ workspace_name }}"
 version = "0.0.0"
 description = "Process-bigraph research workspace"
 requires-python = ">=3.12"
+# Runtime dependencies are only what the workspace package imports to run its
+# processes, so `pip install <workspace>` stays lean: a backend that installs the
+# package into its own environment (an HPC runner, compose-api, sms-api's
+# extra_pip_deps) gets no dashboard stack. The dashboard is the `dashboard` extra
+# below; the container image and `.[dev]` install it.
 dependencies = [
     # Floor: 1.8.5 ships the composite `core_extensions` mechanism (1.8.0) the
     # dashboard relies on AND the emitter fix (#217) + `requests`/`fire` server
@@ -10,25 +15,41 @@ dependencies = [
     # break — the root cause behind the map[...] type errors seen in the field.
     "process-bigraph>=1.8.5",
     "bigraph-schema>=1.8.1",
-    "bigraph-viz>=2.0.3",
+    # The `cli` subpackage reads composite documents with it.
     "pyyaml>=6.0",
+]
+
+[project.optional-dependencies]
+# Web-based workspace dashboard (server + templates + assets + lib helpers),
+# reports and visualizations. vivarium-workbench was extracted from viva-template
+# as of v0.4.16 and provides the `vivarium-workbench serve` CLI invoked by
+# scripts/serve.sh and the container image (Dockerfile, Singularity.def).
+dashboard = [
+    "bigraph-viz>=2.0.3",
     "jsonschema[format-nongpl]>=4.21",
     "jinja2>=3.1",
     "pypdf>=4.0",
     "matplotlib",
     "plotly",
-    # Web-based workspace dashboard (server + templates + assets + lib helpers).
-    # Extracted from viva-template as of v0.4.16; provides the `vivarium-workbench
-    # serve` CLI invoked by scripts/serve.sh.
     "vivarium-workbench",
 ]
-
-[project.optional-dependencies]
-dev = ["pytest>=7.4"]
+# Local development and workspace CI (`uv pip install -e ".[dev]"`) run the lint,
+# the reports and the dashboard, so they need it too.
+dev = ["pytest>=7.4", "{{ workspace_name }}[dashboard]"]
 cli = ["typer", "rich"]
 
 [project.scripts]
 {{ workspace_name }} = "{{ package_path }}.cli.__main__:main"
+
+# The container image (Dockerfile, Singularity.def) runs `uv sync`, which installs
+# no extras but does install uv's default dependency groups; this group carries the
+# dashboard extra into the image, so `vivarium-workbench serve` is always there.
+# Groups are not package metadata, so `pip install <workspace>` is unaffected.
+[dependency-groups]
+workbench = ["{{ workspace_name }}[dashboard]"]
+
+[tool.uv]
+default-groups = ["workbench"]
 
 [build-system]
 requires = ["hatchling"]
