@@ -409,7 +409,7 @@ VIVARIUM_GIT_URL="https://github.com/vivarium-collective/vivarium-workbench.git"
 VIVARIUM_GIT_REF="${VIVARIUM_WORKBENCH_REF:-main}"
 if [ -f pyproject.toml ] \
    && ! grep -q '^\[tool\.uv\.sources\]' pyproject.toml \
-   && grep -q '"vivarium-workbench"' pyproject.toml; then
+   && grep -q '"vivarium-workbench\(\[[^]]*\]\)\?"' pyproject.toml; then
   printf '\n[tool.uv.sources]\nvivarium-workbench = { git = "%s", branch = "%s" }\n' \
     "$VIVARIUM_GIT_URL" "$VIVARIUM_GIT_REF" >> pyproject.toml
   echo "pinned vivarium-workbench to git source: $VIVARIUM_GIT_URL@$VIVARIUM_GIT_REF"
