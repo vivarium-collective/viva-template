@@ -34,7 +34,11 @@ dashboard = [
     "pypdf>=4.0",
     "matplotlib",
     "plotly",
-    "vivarium-workbench",
+    # [loom-render] pulls playwright so report PDF export + loom-PNG render work
+    # out of the box (headless-chromium renderer). Without it, the ⬇ PDF button
+    # fails with "PDF export needs Playwright (the 'loom-render' extra)". Chromium
+    # itself is fetched once per machine via `python -m playwright install chromium`.
+    "vivarium-workbench[loom-render]",
 ]
 # Local development and workspace CI (`uv pip install -e ".[dev]"`) run the lint,
 # the reports and the dashboard, so they need it too.
