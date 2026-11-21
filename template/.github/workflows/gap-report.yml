@@ -8,7 +8,7 @@
 # re-scaffolding, or by copying the current source from
 #   vivarium-collective/viva-template/template/.github/workflows/<template>
 # template: gap-report.yml
-# sha256: 3cf9383f48671c249b0c530c795a0b7e1d5da9578871157662e284b63d1769af
+# sha256: e62960ad535b97bbcd3efedcb37f1a200e99ec0ed35c6d7aa8098aae7bc4d5d0
 # <<< viva-template-provenance <<<
 
 name: gap-report
@@ -37,7 +37,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: vivarium-collective/discovery-engine/.github/actions/gap-report@v0.7.4
+      - uses: vivarium-collective/discovery-engine/.github/actions/gap-report@1627d19375e942d587981344695c1137b074c45f
         with:
           workspace: .
           warn_only: true          # report-only: posts summary + annotations, never fails the job
