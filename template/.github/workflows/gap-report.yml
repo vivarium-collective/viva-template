@@ -1,0 +1,45 @@
+# >>> viva-template-provenance >>>
+# This GitHub Actions workflow is GENERATED from viva-template. Do not edit
+# it by hand: your changes are lost the next time it is regenerated, and a
+# hand-edit is invisible to the drift guard.
+#
+# If viva-template's copy of this workflow changes, this file becomes STALE
+# and workspace CI flags it (scripts/check-workflow-freshness.py). Refresh by
+# re-scaffolding, or by copying the current source from
+#   vivarium-collective/viva-template/template/.github/workflows/<template>
+# template: gap-report.yml
+# sha256: 3cf9383f48671c249b0c530c795a0b7e1d5da9578871157662e284b63d1769af
+# <<< viva-template-provenance <<<
+
+name: gap-report
+
+# Discovery-engine study-gap report. On every PR that touches the workspace,
+# runs the discovery-engine report linter across every study + investigation
+# (including ungrouped studies) and posts a gap summary — missing tests, empty
+# claims, unverified/overclaimed verdicts, status drift, incomplete narrative —
+# as a PR comment plus inline annotations. Report-only by default (warn_only);
+# set warn_only: false in a workspace to make blocking gaps fail the PR.
+#
+# This is a thin caller: all gap->annotation logic lives in the reusable
+# discovery-engine composite Action (discovery_engine.integration.ci). Nothing
+# workspace-specific here.
+
+on:
+  pull_request:
+    paths: ['workspace/**']
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  gap-report:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: vivarium-collective/discovery-engine/.github/actions/gap-report@v0.7.4
+        with:
+          workspace: .
+          warn_only: true          # report-only: posts summary + annotations, never fails the job
+          # strict: 'false'        # promote opt-in warnings to blocking (only when warn_only=false)
+          # ruleset: ''            # e.g. 'campaign'
