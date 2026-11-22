@@ -35,7 +35,7 @@ Use this template directly. No plugin, no Claude Code required.
 
 Want AI-assisted authoring? Install the
 [viva-superpowers](https://github.com/vivarium-collective/viva-superpowers)
-Claude Code plugin; running `/viva-workspace my-project` from inside Claude
+Claude Code plugin; running `/viva:workspace my-project` from inside Claude
 Code clones this template and bootstraps a workspace with conversational
 study, composite, and visualization authoring on top. See the
 [viva-superpowers Getting Started](https://github.com/vivarium-collective/viva-superpowers#getting-started)
@@ -121,7 +121,7 @@ into every scaffolded workspace:
 - `study.schema.json` — the 8-section canonical Study structure (Design → Build → Simulate → Evaluate → Decide), including follow-up proposals for Decide-phase loops.
 - `investigation.schema.json` — Investigations as collections of studies with a DAG via `pipeline_gate.prerequisites`.
 
-Schemas are pinned at scaffold time. `/viva-workspace` overwrites them with the
+Schemas are pinned at scaffold time. `/viva:workspace` overwrites them with the
 plugin's current version; standalone users get whatever was last synced here.
 
 ## Keeping scaffolded workflows in sync (workflow auto-sync)

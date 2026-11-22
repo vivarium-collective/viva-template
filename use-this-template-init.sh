@@ -7,7 +7,7 @@
 # removes viva-template's dev infra, then runs the normal render via
 # template-init.sh.
 #
-# Users coming through the viva-superpowers /viva-workspace command never
+# Users coming through the viva-superpowers /viva:workspace command never
 # touch this script — the plugin scaffolder copies template/* directly.
 set -euo pipefail
 
