@@ -583,7 +583,12 @@ def open_pr_for_repo(full_name: str, templates: dict[str, str]) -> str | None:
         commit_msg = ("chore: sync generated workflows to viva-template\n\n"
                       + "\n".join(body_lines))
         _git("commit", "-m", commit_msg)
-        _git("push", "-u", "origin", SYNC_BRANCH, "--force")
+        try:
+            _git("push", "-u", "origin", SYNC_BRANCH, "--force")
+        except subprocess.CalledProcessError as exc:
+            print(f"  ! push failed for {full_name}: "
+                  f"{(exc.stderr or '').strip()}", file=sys.stderr)
+            raise
 
         pr_body = _pr_body(changed, preserved_all)
         try:
@@ -704,6 +709,21 @@ def main(argv: list[str] | None = None) -> int:
         repos = [_normalize_repo(args.repo, args.org)]
 
     dry_run = not args.open_pr  # default is dry-run
+
+    if not dry_run:
+        # `git push` below authenticates through git's credential helper, not
+        # through gh's API client -- so GH_TOKEN alone is not enough. Wire gh in
+        # as git's credential helper (it hands git the GH_TOKEN) or every push
+        # dies with "could not read Username for 'https://github.com'". Without
+        # this the whole --open-pr path is inert regardless of token scope.
+        try:
+            subprocess.run(["gh", "auth", "setup-git"], check=True,
+                           capture_output=True, text=True)
+        except (subprocess.CalledProcessError, FileNotFoundError) as exc:
+            stderr = getattr(exc, "stderr", "") or ""
+            print(f"ERROR: `gh auth setup-git` failed, pushes will not "
+                  f"authenticate: {stderr.strip()}", file=sys.stderr)
+            return 2
 
     repo_results: list[tuple[str, list[SyncResult]]] = []
     for full_name in repos:
