@@ -293,6 +293,31 @@
       ],
       "description": "DEPRECATED — superseded by `result` for the Overview. Filled in after analysis; leave null while status is draft/in-progress."
     },
+    "simulator": {
+      "type": [
+        "object",
+        "null"
+      ],
+      "description": "Optional per-study simulator pin (RFC-0008): the package that registers this study's composites and the exact version/commit it targets, so a study's reproduction target is declared independently of the workspace-wide pin. The `simulator-pin` audit (discovery-engine) checks the pinned package/ref against the environment the study resolves in. Omit to inherit the workspace environment.",
+      "additionalProperties": true,
+      "properties": {
+        "package": {
+          "type": "string",
+          "description": "Distribution (PyPI/import) name of the package that registers the study's composites, e.g. `viva-smoldyn`, `process-bigraph`."
+        },
+        "ref": {
+          "type": "string",
+          "description": "The version (e.g. `1.4.2`) or git commit SHA the study targets. Checked against the installed version/sha by the `simulator-pin` audit."
+        },
+        "registry": {
+          "type": "string",
+          "description": "Where the composite id resolves (e.g. `compose-api`). Defaults to the workspace registry when omitted."
+        }
+      },
+      "required": [
+        "package"
+      ]
+    },
     "baseline": {
       "type": "array",
       "description": "CANONICAL: always a non-empty list, even if there is only one architecture. Each entry is a named simulation configuration. Canonical since v3; do NOT use the old single-dict form.",
