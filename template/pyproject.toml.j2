@@ -58,6 +58,13 @@ workbench = ["{{ workspace_name }}[dashboard]"]
 [tool.uv]
 default-groups = ["workbench"]
 
+[tool.viva]
+# Repo archetype — see docs/conventions/repo-archetypes.md in viva-superpowers.
+# A repo created from this (the workspace) template is a workspace: studies/investigations
+# that PIN simulators, no engine code. Change to "simulator" or "showcase" only if that is
+# what this repo actually is (the package_audit archetype lint checks kind vs content).
+kind = "workspace"
+
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
